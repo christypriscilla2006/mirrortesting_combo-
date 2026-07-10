@@ -1,0 +1,31 @@
+{
+  "test": "T4B",
+  "description": "Browser WebGL FPS (Raspberry Pi \u2014 real measurement)",
+  "platform": "Raspberry Pi",
+  "timestamp": "2026-07-09T22:09:09.932250",
+  "duration_s": 15,
+  "samples": 14,
+  "readings": [
+    55,
+    55,
+    37,
+    12,
+    12,
+    12,
+    11,
+    11,
+    20,
+    57,
+    58,
+    49,
+    13,
+    12
+  ],
+  "avg_fps": 29.6,
+  "min_fps": 11,
+  "max_fps": 58,
+  "stdev_fps": 20.7,
+  "low_1pct_fps": 11,
+  "exceeds_24fps": true,
+  "verdict": "PASS"
+}

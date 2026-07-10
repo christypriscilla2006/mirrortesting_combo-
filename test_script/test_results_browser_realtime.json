@@ -1,0 +1,62 @@
+{
+  "timestamp": "2026-07-10T23:23:23.835013",
+  "windows": {
+    "os": "Windows 11",
+    "arch": "x86-64",
+    "cpu_percent": 9.8,
+    "cpu_freq_mhz": 1700.0,
+    "cpu_temp": "Not measured",
+    "api_cold_ms": 60.9690999990562,
+    "api_warm_mean_ms": 6.09810050041374,
+    "gesture_proc_mean_ms": 8.55217566674643,
+    "transition_stats": {
+      "n": 3000,
+      "mean": 29.805485188802084,
+      "median": 29.750244140625,
+      "min": 3.416015625,
+      "max": 186.42724609375,
+      "var": 424.46058818974393,
+      "std": 20.602441316255312,
+      "p95": 59.43632812499998,
+      "outliers": 50,
+      "ci": [
+        29.067952183342804,
+        30.543018194261364
+      ]
+    }
+  },
+  "raspberry_pi_5": {
+    "os": "Raspberry Pi OS (Linux)",
+    "arch": "ARM Cortex-A76",
+    "cpu_percent": 28.5,
+    "cpu_freq_mhz": 2200.0,
+    "cpu_temp": "64.2\u00b0C",
+    "api_cold_ms": 433.1371,
+    "api_warm_mean_ms": 6.3877,
+    "gesture_proc_mean_ms": 1.6214,
+    "transition_stats": {
+      "n": 3000,
+      "mean": 7.105103966666666,
+      "median": 5.302350000000001,
+      "min": 3.357,
+      "max": 50.0609,
+      "var": 63.724495347536774,
+      "std": 7.982762388267408,
+      "p95": 9.863254999999992,
+      "outliers": 182,
+      "ci": [
+        6.819334399569737,
+        7.390873533763596
+      ]
+    }
+  },
+  "significance": {
+    "u_statistic": 8340695.0,
+    "p_value": 0.0,
+    "significant": true
+  },
+  "webgl_fps": {
+    "avg_fps": 49.55555555555556,
+    "state_machine_ok": true
+  }
+}

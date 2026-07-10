@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MIrrorGrid OS — Smart Mirror Interface</title>
+    <meta name="description" content="MIrrorGrid: High-performance smart mirror OS with gesture control">
+
+    <!-- Fonts: Orbitron (heads) + Share Tech Mono (data) + Great Vibes (intro) -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Great+Vibes&display=swap" rel="stylesheet">
+
+    <!-- Cyberpunk Design System -->
+    <link rel="stylesheet" href="css/cyberpunk.css?v=2">
+
+    <!-- Three.js + Post Processing -->
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.158.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.158.0/examples/jsm/"
+        }
+    }
+    </script>
+</head>
+<body class="state-boot">
+
+    <!-- ═══════════════════════════════════════════
+         INTRO SEQUENCE  (mirrors wallpaper.html)
+         Fades out after 4s → reveals main UI
+    ═══════════════════════════════════════════ -->
+    <div id="intro-container" aria-hidden="true">
+        <div class="intro-inner">
+            <h1 class="hello-text">Hello</h1>
+            <p class="intro-sub">MIRRORGRID OS · INITIALIZING</p>
+            <div class="intro-bar">
+                <div class="intro-bar-fill"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════
+         MAIN APPLICATION
+    ═══════════════════════════════════════════ -->
+    <div id="main-app">
+
+        <!-- Three.js canvas — particle wallpaper (from wallpaper.html, neon cyan) -->
+        <div id="canvas-container" aria-hidden="true"></div>
+
+        <!-- Scanline overlay (CRT aesthetic) -->
+        <div id="scanlines" aria-hidden="true"></div>
+
+        <!-- ── SLEEP OVERLAY ────────────────────────
+             Pure black — activated on closed_fist gesture
+             Allows full mirror reflection
+        ─────────────────────────────────────────── -->
+        <div id="sleep-overlay" aria-label="Mirror mode active">
+            <div class="sleep-indicator">
+                <span class="sleep-dot"></span>
+            </div>
+        </div>
+
+        <!-- ── MAIN UI LAYER ─────────────────────── -->
+        <div id="ui-layer">
+
+            <!-- ── HEADER BAR ──────────────────────── -->
+            <header id="header-bar">
+                <div id="system-id">
+                    <span class="sys-label">MGR</span>
+                    <span class="sys-sep">·</span>
+                    <span id="hostname">PI-5</span>
+                </div>
+
+                <!-- Live clock -->
+                <div id="clock-widget">
+                    <div id="clock-time">00:00:00</div>
+                    <div id="clock-date">MON 00 JAN</div>
+                </div>
+
+                <div id="system-status">
+                    <span class="status-dot" id="ws-dot" title="WebSocket"></span>
+                    <span class="status-label">WS</span>
+                    <span class="status-sep">|</span>
+                    <span class="status-dot active" id="api-dot" title="API"></span>
+                    <span class="status-label">API</span>
+                </div>
+            </header>
+
+            <!-- ── MODULE AREA ─────────────────────── -->
+            <main id="module-area">
+
+                <!-- ── PAGE 1: BRIEFING ── -->
+                <section id="module-task" class="module page-1-module" aria-label="Task Module">
+                    <div class="module-header">
+                        <span class="module-icon">◈</span>
+                        <h2 class="module-title">STUDENT SCHEDULE</h2>
+                        <span class="module-badge" id="task-priority">HIGH</span>
+                    </div>
+                    <div class="module-body">
+                        <div id="task-title">LOADING...</div>
+                        <div id="task-due" class="task-due"></div>
+                        <ul id="task-subtasks" class="subtask-list"></ul>
+                        <div class="task-progress">
+                            <div class="progress-label">
+                                <span>PROGRESS</span>
+                                <span id="task-progress-pct">0%</span>
+                            </div>
+                            <div class="progress-track">
+                                <div class="progress-fill" id="task-progress-fill"></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="module-weather" class="module page-1-module" aria-label="Weather Module">
+                    <div class="module-header">
+                        <span class="module-icon">◉</span>
+                        <h2 class="module-title">CHENNAI WEATHER</h2>
+                        <span class="module-badge" id="weather-condition">CLEAR</span>
+                    </div>
+                    <div class="module-body">
+                        <div class="weather-main">
+                            <div class="weather-temp" id="weather-temp">--°</div>
+                            <div class="weather-meta">
+                                <div class="weather-row">
+                                    <span class="weather-key">HUMIDITY</span>
+                                    <span class="weather-val" id="weather-humidity">--%</span>
+                                </div>
+                                <div class="weather-row">
+                                    <span class="weather-key">WIND</span>
+                                    <span class="weather-val" id="weather-wind">-- KPH</span>
+                                </div>
+                                <div class="weather-row">
+                                    <span class="weather-key">STATION</span>
+                                    <span class="weather-val" id="weather-location">--</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="weather-forecast" id="weather-forecast">
+                            <!-- Forecast cards injected by ui_manager.js -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ── PAGE 2: COMMUTE ── -->
+                <section id="module-traffic" class="module page-2-module" aria-label="Traffic Module">
+                    <div class="module-header">
+                        <span class="module-icon">◱</span>
+                        <h2 class="module-title">COMMUTE / TRAFFIC</h2>
+                        <span class="module-badge" id="traffic-trend">SYNCING</span>
+                    </div>
+                    <div class="module-body">
+                        <div id="traffic-route" style="font-size: 1.2rem; margin-bottom: 10px; color: var(--cyan);">ROUTE --</div>
+                        <div style="font-size: 2rem; font-weight: bold; margin-bottom: 5px;" id="traffic-eta">-- MINS</div>
+                        <div id="traffic-status" style="margin-bottom: 15px;">STATUS: --</div>
+                        <div id="traffic-incidents" style="font-size: 0.9rem; opacity: 0.8; border-left: 2px solid var(--magenta); padding-left: 10px;">
+                            No incidents reported.
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ── PAGE 3: COMMS ── -->
+                <section id="module-emails" class="module page-3-module" aria-label="Emails Module">
+                    <div class="module-header">
+                        <span class="module-icon">✉</span>
+                        <h2 class="module-title">PRIORITY EMAILS</h2>
+                        <span class="module-badge">3 UNREAD</span>
+                    </div>
+                    <div class="module-body">
+                        <ul id="email-list" class="email-list" style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 15px;">
+                            <!-- Populated via JS -->
+                        </ul>
+                    </div>
+                </section>
+
+                <!-- ── PAGE 4: TELEMETRY ── -->
+                <section id="module-telemetry" class="module page-4-module" aria-label="Telemetry Module">
+                    <div class="module-header">
+                        <span class="module-icon">⚙</span>
+                        <h2 class="module-title">REAL-TIME TELEMETRY</h2>
+                        <span class="module-badge" id="telemetry-fps">-- FPS</span>
+                    </div>
+                    <div class="module-body" style="display: flex; flex-direction: column; gap: 20px; padding-top: 10px;">
+                        <!-- CPU -->
+                        <div class="telemetry-stat">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                <span>CPU USAGE</span>
+                                <span id="telemetry-cpu-val" class="cyan-text">--%</span>
+                            </div>
+                            <div class="progress-track">
+                                <div class="progress-fill" id="telemetry-cpu-bar" style="width: 0%; background: var(--cyan);"></div>
+                            </div>
+                        </div>
+                        <!-- RAM -->
+                        <div class="telemetry-stat">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                <span>SYSTEM RAM</span>
+                                <span id="telemetry-ram-val" class="magenta-text">--%</span>
+                            </div>
+                            <div class="progress-track">
+                                <div class="progress-fill" id="telemetry-ram-bar" style="width: 0%; background: var(--magenta);"></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+            </main>
+
+            <!-- ── GESTURE HUD ──────────────────────── -->
+            <div id="gesture-hud" aria-live="polite">
+                <div id="gesture-icon"></div>
+                <div id="gesture-label"></div>
+            </div>
+
+            <!-- ── FOOTER BAR ──────────────────────── -->
+            <footer id="footer-bar">
+                <div class="footer-gesture-hints">
+                    <span class="hint"><span class="hint-key">✋</span> WAKE</span>
+                    <span class="hint"><span class="hint-key">✊</span> SLEEP</span>
+                    <span class="hint"><span class="hint-key">👈👉</span> CYCLE</span>
+                    <span class="hint"><span class="hint-key">👍</span> DISMISS</span>
+                </div>
+                <div class="footer-sys">
+                    <span id="cpu-temp">CPU --°C</span>
+                    <span class="footer-sep">·</span>
+                    <span id="uptime">UP --H</span>
+                </div>
+            </footer>
+
+        </div><!-- /ui-layer -->
+    </div><!-- /main-app -->
+
+
+    <!-- ═══════════════════════════════════════════
+         THREE.JS SATURN PARTICLE WALLPAPER
+         Adapted from wallpaper.html — color → #00f3ff
+         animationActive = false by default (PAUSED)
+         Exposed API: window.MG_Particles.start() / .pause()
+    ═══════════════════════════════════════════ -->
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls }   from 'three/addons/controls/OrbitControls.js';
+        import { EffectComposer }  from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass }      from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+        const NEON_CYAN    = 0x00f3ff;
+        const NUM_PARTICLES = 15000;
+        let animationActive = false;
+        let animationId     = null;
+
+        const container = document.getElementById('canvas-container');
+
+        // ── Scene ───────────────────────────────────
+        const scene = new THREE.Scene();
+        scene.fog   = new THREE.FogExp2(0x000000, 0.002);
+
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 0, 60);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Cap at 2x for Pi
+        container.appendChild(renderer.domElement);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping    = true;
+        controls.autoRotate       = true;
+        controls.autoRotateSpeed  = 0.8;
+        controls.enableZoom       = false;
+        controls.enablePan        = false;
+
+        // ── Bloom post-processing ────────────────────
+        const renderScene = new RenderPass(scene, camera);
+        const bloomPass   = new UnrealBloomPass(
+            new THREE.Vector2(window.innerWidth, window.innerHeight),
+            1.5, 0.4, 0.85
+        );
+        bloomPass.threshold = 0;
+        bloomPass.strength  = 1.4;
+        bloomPass.radius    = 0.6;
+
+        const composer = new EffectComposer(renderer);
+        composer.addPass(renderScene);
+        composer.addPass(bloomPass);
+
+        // ── Particle texture (soft radial glow) ─────
+        const pCanvas  = document.createElement('canvas');
+        pCanvas.width  = 32;
+        pCanvas.height = 32;
+        const pCtx = pCanvas.getContext('2d');
+        const grad = pCtx.createRadialGradient(16, 16, 0, 16, 16, 16);
+        grad.addColorStop(0, 'rgba(255,255,255,1)');
+        grad.addColorStop(1, 'rgba(255,255,255,0)');
+        pCtx.fillStyle = grad;
+        pCtx.fillRect(0, 0, 32, 32);
+        const particleTexture = new THREE.CanvasTexture(pCanvas);
+
+        // ── Saturn geometry ──────────────────────────
+        const geometry  = new THREE.BufferGeometry();
+        const positions = new Float32Array(NUM_PARTICLES * 3);
+
+        for (let i = 0; i < NUM_PARTICLES; i++) {
+            const idx = i * 3;
+            let x = 0, y = 0, z = 0;
+            const nx = (Math.random() - 0.5) * 1.5;
+            const ny = (Math.random() - 0.5) * 1.5;
+            const nz = (Math.random() - 0.5) * 1.5;
+
+            if (i < NUM_PARTICLES * 0.4) {
+                // Planet body
+                const u = Math.random(), v = Math.random();
+                const theta = u * 2 * Math.PI;
+                const phi   = Math.acos(2 * v - 1);
+                const r     = Math.cbrt(Math.random()) * 12;
+                x = r * Math.sin(phi) * Math.cos(theta);
+                y = r * Math.cos(phi);
+                z = r * Math.sin(phi) * Math.sin(theta);
+            } else {
+                // Rings
+                const angle = Math.random() * Math.PI * 2;
+                const r     = 16 + Math.random() * 14;
+                x = r * Math.cos(angle);
+                y = (Math.random() - 0.5) * 1.5;
+                z = r * Math.sin(angle);
+            }
+
+            // Tilt
+            const tY = y * Math.cos(0.4) - z * Math.sin(0.4);
+            const tZ = y * Math.sin(0.4) + z * Math.cos(0.4);
+            positions[idx]     = x + nx;
+            positions[idx + 1] = tY + ny;
+            positions[idx + 2] = tZ + nz;
+        }
+
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+        const material = new THREE.PointsMaterial({
+            size:        0.7,
+            color:       new THREE.Color(NEON_CYAN),
+            map:         particleTexture,
+            transparent: true,
+            opacity:     0.85,
+            depthWrite:  false,
+            blending:    THREE.AdditiveBlending,
+        });
+
+        const particleSystem = new THREE.Points(geometry, material);
+        scene.add(particleSystem);
+
+        // Pre-render one static frame (visible behind UI immediately)
+        composer.render();
+
+        // ── Animation loop ───────────────────────────
+        const clock      = new THREE.Clock();
+        let currentScale = 1.0;
+        let targetScale  = 1.0;
+
+        function animate() {
+            if (!animationActive) return;
+            animationId = requestAnimationFrame(animate);
+
+            const time = clock.getElapsedTime();
+            const minS = 0.9, maxS = 2.2;
+            const mid  = (maxS + minS) / 2;
+            const amp  = (maxS - minS) / 2;
+
+            targetScale  = mid - Math.cos(time * Math.PI / 10) * amp;
+            currentScale += (targetScale - currentScale) * 0.1;
+            particleSystem.scale.set(currentScale, currentScale, currentScale);
+            controls.autoRotateSpeed = currentScale * 1.2;
+            controls.update();
+            composer.render();
+        }
+
+        // ── Resize handler ───────────────────────────
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            composer.setSize(window.innerWidth, window.innerHeight);
+            if (!animationActive) composer.render(); // Refresh static frame
+        });
+
+        // ── Public API (used by ui_manager.js) ───────
+        window.MG_Particles = {
+            start() {
+                if (animationActive) return;
+                animationActive = true;
+                clock.start();
+                animate();
+            },
+            pause() {
+                animationActive = false;
+                if (animationId) cancelAnimationFrame(animationId);
+                animationId = null;
+                composer.render(); // Freeze on current frame
+            },
+            setColor(hex) {
+                material.color.set(hex);
+                if (!animationActive) composer.render();
+            },
+        };
+
+        // Notify other scripts that Three.js is ready
+        window.dispatchEvent(new Event('mg:particles-ready'));
+    </script>
+
+    <!-- ── Clock updater (runs immediately, no WS needed) ── -->
+    <script>
+        (function initClock() {
+            const timeEl = document.getElementById('clock-time');
+            const dateEl = document.getElementById('clock-date');
+            const DAYS   = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+            const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN',
+                            'JUL','AUG','SEP','OCT','NOV','DEC'];
+
+            function pad(n) { return String(n).padStart(2, '0'); }
+
+            function tick() {
+                const now = new Date();
+                timeEl.textContent =
+                    `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+                dateEl.textContent =
+                    `${DAYS[now.getDay()]} ${pad(now.getDate())} ${MONTHS[now.getMonth()]}`;
+            }
+            tick();
+            setInterval(tick, 1000);
+        })();
+    </script>
+
+    <!-- Phase 4 scripts (loaded after DOM ready) -->
+    <script src="js/websocket.js?v=2" defer></script>
+    <script src="js/ui_manager.js?v=2" defer></script>
+
+</body>
+</html>

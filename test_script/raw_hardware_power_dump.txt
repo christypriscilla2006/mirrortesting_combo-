@@ -1,0 +1,20 @@
+# TEST 5: Raw Hardware Power Telemetry Dump
+# Generated: 2026-07-09T07:48:53.885846
+# Platform: Windows-11-10.0.26200-SP0
+# Total entries: 15
+#======================================================================
+STATE=IDLE | Sample=1 | CPU=14.6% | Freq=1700.0 MHz | Temp=N/A°C | Phys.Power=N/AW | PSU={}
+STATE=IDLE | Sample=2 | CPU=15.8% | Freq=1700.0 MHz | Temp=N/A°C | Phys.Power=N/AW | PSU={}
+STATE=IDLE | Sample=3 | CPU=13.6% | Freq=1700.0 MHz | Temp=N/A°C | Phys.Power=N/AW | PSU={}
+STATE=IDLE | Sample=4 | CPU=12.8% | Freq=1700.0 MHz | Temp=N/A°C | Phys.Power=N/AW | PSU={}
+STATE=IDLE | Sample=5 | CPU=19.4% | Freq=1700.0 MHz | Temp=N/A°C | Phys.Power=N/AW | PSU={}
+STATE=ACTIVE_GESTURE | Sample=1 | CPU=18.4% | Freq=1700.0 MHz | Temp=N/A°C | Phys.Power=N/AW
+STATE=ACTIVE_GESTURE | Sample=2 | CPU=19.9% | Freq=1700.0 MHz | Temp=N/A°C | Phys.Power=N/AW
+STATE=ACTIVE_GESTURE | Sample=3 | CPU=17.6% | Freq=1700.0 MHz | Temp=N/A°C | Phys.Power=N/AW
+STATE=ACTIVE_GESTURE | Sample=4 | CPU=13.3% | Freq=1700.0 MHz | Temp=N/A°C | Phys.Power=N/AW
+STATE=ACTIVE_GESTURE | Sample=5 | CPU=13.6% | Freq=1700.0 MHz | Temp=N/A°C | Phys.Power=N/AW
+STATE=WEBGL_LOAD | Sample=1 | CPU=17.4% | Freq=1700.0 MHz | Temp=N/A°C | Phys.Power=N/AW
+STATE=WEBGL_LOAD | Sample=2 | CPU=14.6% | Freq=1700.0 MHz | Temp=N/A°C | Phys.Power=N/AW
+STATE=WEBGL_LOAD | Sample=3 | CPU=12.6% | Freq=1700.0 MHz | Temp=N/A°C | Phys.Power=N/AW
+STATE=WEBGL_LOAD | Sample=4 | CPU=13.9% | Freq=1700.0 MHz | Temp=N/A°C | Phys.Power=N/AW
+STATE=WEBGL_LOAD | Sample=5 | CPU=12.6% | Freq=1700.0 MHz | Temp=N/A°C | Phys.Power=N/AW

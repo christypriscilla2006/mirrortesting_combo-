@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MirrorGrid Phase 5</title>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet" />
+
+  <!-- GSAP -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
+
+  <!-- Leaflet for offline-friendly map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <style>
+    /* ─── RESET & BASE ─────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --accent:   #00ffe7;
+      --accent2:  #ff2d78;
+      --accent3:  #ffe600;
+      --bg:       #050a0f;
+      --glass:    rgba(255,255,255,0.04);
+      --glass-b:  rgba(255,255,255,0.08);
+      --text:     #e8f4f8;
+      --muted:    rgba(232,244,248,0.45);
+      --neon-glow: 0 0 12px var(--accent), 0 0 30px rgba(0,255,231,0.3);
+    }
+
+    html, body {
+      width: 100%; height: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      font-family: 'Inter', sans-serif;
+      color: var(--text);
+    }
+
+    /* ─── THREE.JS CANVAS ──────────────────────────── */
+    #three-canvas {
+      position: fixed; inset: 0; z-index: 0;
+      opacity: 0.25; /* Dim background */
+    }
+
+    /* ─── IST CLOCK TOP-RIGHT ──────────────────────── */
+    #ist-clock {
+      position: fixed; top: 22px; right: 200px;
+      z-index: 51; text-align: right;
+      pointer-events: none;
+    }
+    #ist-time {
+      font-family: 'Orbitron', monospace;
+      font-size: 1.35rem; font-weight: 700;
+      color: #ff8c00;
+      text-shadow: 0 0 10px #ff8c00, 0 0 24px rgba(255,140,0,0.5);
+      letter-spacing: 2px;
+    }
+    #ist-date {
+      font-size: .6rem; letter-spacing: 1.8px;
+      color: rgba(255,140,0,0.65);
+      margin-top: 2px; text-align: right;
+    }
+
+    /* ─── CAM OVERLAY ──────────────────────────────── */
+    #cam-wrap {
+      position: fixed; top: 18px; right: 18px;
+      width: 160px; height: 120px;
+      border-radius: 12px; overflow: hidden;
+      border: 1px solid rgba(0,255,231,0.25);
+      z-index: 50; background: #000;
+    }
+    #cam-feed  { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+    #cam-canvas{ position:absolute; inset:0; width:100%; height:100%; }
+
+    /* ─── HUD TOP-LEFT ─────────────────────────────── */
+    #hud {
+      position: fixed; top: 18px; left: 22px;
+      z-index: 50;
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    #hud .logo {
+      font-family: 'Orbitron', monospace;
+      font-size: 1rem; letter-spacing: 3px;
+      color: var(--accent); text-shadow: var(--neon-glow);
+    }
+    #hud .sub { font-size: .7rem; color: var(--muted); letter-spacing:2px; }
+    #hud-status {
+      margin-top: 6px;
+      font-size: .65rem; letter-spacing: 1.5px;
+      color: var(--accent3);
+    }
+
+    /* ─── GESTURE BADGE ────────────────────────────── */
+    #gesture-badge {
+      position: fixed; bottom: 72px; left: 50%;
+      transform: translateX(-50%);
+      background: var(--glass-b);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(0,255,231,0.2);
+      border-radius: 40px;
+      padding: 6px 22px;
+      font-size: .72rem; letter-spacing: 2px;
+      color: var(--accent);
+      z-index: 50;
+      transition: opacity .4s;
+    }
+
+    /* ─── PAGE DOTS ────────────────────────────────── */
+    #page-dots {
+      position: fixed; bottom: 28px; left: 50%;
+      transform: translateX(-50%);
+      display: flex; gap: 8px; z-index: 50;
+    }
+    .dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: rgba(255,255,255,0.22);
+      transition: background .3s, transform .3s;
+    }
+    .dot.active {
+      background: var(--accent);
+      transform: scale(1.4);
+      box-shadow: 0 0 8px var(--accent);
+    }
+
+    /* ─── SLEEP OVERLAY ────────────────────────────── */
+    #sleep-overlay {
+      position: fixed; inset: 0; z-index: 80;
+      background: #000;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 12px;
+      transition: opacity .5s;
+    }
+    #sleep-overlay .sleep-time {
+      font-family: 'Orbitron', monospace;
+      font-size: 5vw; font-weight: 700;
+      color: var(--accent); text-shadow: var(--neon-glow);
+    }
+    #sleep-overlay .sleep-hint {
+      font-size: .72rem; letter-spacing: 2px;
+      color: var(--muted);
+    }
+
+    /* ─── CARD LAYER ───────────────────────────────── */
+    #ui-layer {
+      position: fixed; inset: 0; z-index: 20;
+      display: flex; align-items: center; justify-content: center;
+      pointer-events: none;
+    }
+
+    .card {
+      display: none;
+      width: min(580px, 90vw);
+      background: rgba(10, 15, 22, 0.85); /* Enhanced content area */
+      box-shadow: 0 0 30px rgba(0,0,0,0.8);
+      backdrop-filter: blur(22px);
+      border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 22px;
+      padding: 32px 28px;
+      pointer-events: all;
+      animation: cardIn .45s cubic-bezier(.22,1,.36,1) both;
+    }
+    .card.active { display: block; }
+
+    @keyframes cardIn {
+      from { opacity:0; transform: translateY(28px) scale(.96); }
+      to   { opacity:1; transform: translateY(0) scale(1); }
+    }
+
+    .card-title {
+      font-family: 'Orbitron', monospace;
+      font-size: .72rem; letter-spacing: 3px;
+      color: var(--accent); margin-bottom: 20px;
+      text-transform: uppercase;
+    }
+
+    /* ─── PAGE 0 — IDLE ────────────────────────────── */
+    #page0 { text-align: center; }
+    .idle-ring {
+      width: 110px; height: 110px;
+      border-radius: 50%;
+      border: 2px solid rgba(0,255,231,0.3);
+      box-shadow: inset 0 0 30px rgba(0,255,231,0.08), 0 0 40px rgba(0,255,231,0.1);
+      margin: 0 auto 18px;
+      display: flex; align-items: center; justify-content: center;
+      animation: ringPulse 3s ease-in-out infinite;
+    }
+    @keyframes ringPulse {
+      0%,100% { box-shadow: inset 0 0 30px rgba(0,255,231,0.08), 0 0 40px rgba(0,255,231,0.1); }
+      50%      { box-shadow: inset 0 0 50px rgba(0,255,231,0.18), 0 0 70px rgba(0,255,231,0.22); }
+    }
+    .idle-ring .ri-inner {
+      font-size: 2.4rem; filter: drop-shadow(0 0 8px var(--accent));
+    }
+    .idle-time-big {
+      font-family: 'Orbitron', monospace;
+      font-size: 2.6rem; font-weight:700;
+      color: var(--accent); text-shadow: var(--neon-glow);
+    }
+    .idle-date { font-size:.8rem; color: var(--muted); margin-top:4px; }
+    .cheat-grid {
+      margin-top: 20px;
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 8px; text-align: left;
+    }
+    .cheat-item {
+      background: rgba(0,255,231,0.04);
+      border: 1px solid rgba(0,255,231,0.1);
+      border-radius: 10px; padding: 8px 12px;
+      font-size: .68rem; color: var(--muted);
+    }
+    .cheat-item span { color: var(--accent); margin-right:6px; }
+
+    /* ─── PAGE 1 — DAILY BRIEF ─────────────────────── */
+    .weather-row { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px; }
+    .chip {
+      background: rgba(255,255,255,0.05);
+      border:1px solid rgba(255,255,255,0.1);
+      border-radius:20px; padding:6px 14px;
+      font-size:.75rem; color:var(--text);
+    }
+    .chip strong { color:var(--accent); }
+    .agenda-item {
+      display:flex; gap:12px; align-items:flex-start;
+      padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.06);
+    }
+    .agenda-time { font-size:.7rem; color:var(--accent3); min-width:48px; font-family:'Inter', sans-serif; }
+    .agenda-desc { font-size:.8rem; color:var(--text); }
+
+    /* ─── PAGE 2 — COMMUTE ─────────────────────────── */
+    .route-info { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px; }
+    .delay-badge {
+      background: rgba(255,45,120,0.15);
+      border:1px solid rgba(255,45,120,0.35);
+      border-radius:20px; padding:5px 14px;
+      font-size:.75rem; color:var(--accent2);
+    }
+    #commute-map {
+      width:100%; height:220px;
+      border-radius:14px; overflow:hidden;
+      border:1px solid rgba(0,255,231,0.15);
+      margin-top:10px;
+    }
+    .alt-route { font-size:.72rem; color:var(--muted); margin-top:10px; }
+
+    /* ─── PAGE 3 — PRIORITY MAIL ───────────────────── */
+    .mail-item {
+      background: rgba(255,255,255,0.03);
+      border:1px solid rgba(255,255,255,0.07);
+      border-radius:14px; padding:14px 16px;
+      margin-bottom:10px;
+    }
+    .mail-header { display:flex; justify-content:space-between; margin-bottom:6px; }
+    .mail-sender { font-size:.75rem; font-weight:600; color:var(--accent); }
+    .mail-time   { font-size:.65rem; color:var(--muted); }
+    .mail-subject{ font-size:.8rem; color:var(--text); margin-bottom:6px; }
+    .mail-preview{ font-size:.72rem; color:var(--muted); line-height:1.5; }
+    .mail-tag {
+      display:inline-block; margin-top:7px;
+      background:rgba(0,255,231,0.08); border:1px solid rgba(0,255,231,0.2);
+      border-radius:20px; padding:2px 10px; font-size:.62rem; color:var(--accent);
+    }
+
+    /* ─── PAGE 4 — SYSTEM STATS ────────────────────── */
+    .stat-row { margin-bottom:18px; }
+    .stat-label {
+      display:flex; justify-content:space-between;
+      font-size:.72rem; color:var(--muted); margin-bottom:6px;
+    }
+    .stat-label strong { color:var(--text); }
+    .bar-track {
+      height:8px; border-radius:4px;
+      background:rgba(255,255,255,0.06);
+      overflow:hidden;
+    }
+    .bar-fill {
+      height:100%; border-radius:4px;
+      transition: width .4s ease;
+    }
+    .bar-fill.cpu  { background: linear-gradient(90deg,#00ffe7,#00a8ff); }
+    .bar-fill.ram  { background: linear-gradient(90deg,#ffe600,#ff8c00); }
+    .bar-fill.fps  { background: linear-gradient(90deg,#ff2d78,#ff6b35); }
+
+    /* ─── PAGE 5 — NEWS (Peace Sign) ──────────────── */
+    .news-item {
+      background:rgba(255,255,255,0.03);
+      border:1px solid rgba(255,255,255,0.07);
+      border-radius:12px; padding:12px 14px;
+      margin-bottom:8px;
+    }
+    .news-source { font-size:.62rem; color:var(--accent); letter-spacing:1.5px; text-transform:uppercase; }
+    .news-headline { font-size:.8rem; color:var(--text); margin:4px 0; line-height:1.4; }
+    .news-blurb { font-size:.7rem; color:var(--muted); line-height:1.5; }
+    #news-loading { text-align:center; color:var(--muted); padding:20px; font-size:.8rem; }
+
+    /* ─── PAGE 6 — DAILY HABITS ────────────────────── */
+    .habit-row {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.06);
+    }
+    .habit-left { display:flex; align-items:center; gap:12px; }
+    .habit-icon { font-size:1.4rem; }
+    .habit-name { font-size:.82rem; color:var(--text); }
+    .habit-meta { font-size:.65rem; color:var(--muted); }
+    .habit-check {
+      width:26px; height:26px; border-radius:50%;
+      border:2px solid rgba(0,255,231,0.3);
+      display:flex; align-items:center; justify-content:center;
+      cursor:pointer; transition:all .3s;
+      font-size:.75rem;
+    }
+    .habit-check.done {
+      background:rgba(0,255,231,0.15);
+      border-color:var(--accent);
+      color:var(--accent);
+    }
+    .habit-progress-wrap { margin-top:14px; }
+
+    /* ─── PAGE 7 — FINANCE SNAPSHOT ─────────────────── */
+    .finance-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
+    .finance-card {
+      background:rgba(255,255,255,0.04);
+      border:1px solid rgba(255,255,255,0.08);
+      border-radius:14px; padding:14px;
+    }
+    .finance-label { font-size:.65rem; color:var(--muted); letter-spacing:1.5px; text-transform:uppercase; }
+    .finance-value { font-size:1.3rem; font-weight:600; margin-top:4px; }
+    .finance-delta { font-size:.68rem; margin-top:2px; }
+    .pos { color:#00ffe7; } .neg { color:#ff2d78; }
+    .expense-row {
+      display:flex; justify-content:space-between; align-items:center;
+      padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05);
+      font-size:.76rem;
+    }
+    .expense-cat { color:var(--muted); }
+    .expense-amt { color:var(--text); }
+
+    /* ─── LEAFLET DARK STYLE ─────────────────────────── */
+    .leaflet-tile { /* Removed color invert for real map */ }
+    .leaflet-container { background:#0a0f14; }
+  </style>
+</head>
+<body>
+
+<!-- Sleep overlay -->
+<div id="sleep-overlay">
+  <div class="sleep-time" id="sleep-clock">--:--</div>
+  <div class="sleep-hint">👋 WAVE TO WAKE · ✊ FIST TO SLEEP</div>
+</div>
+
+<!-- Three.js canvas -->
+<canvas id="three-canvas"></canvas>
+
+<!-- HUD -->
+<div id="hud">
+  <div class="logo">◈ MIRRORGRID</div>
+  <div class="sub">PHASE 5 · CHENNAI</div>
+  <div id="hud-status">⬤ CONNECTING…</div>
+</div>
+
+<!-- IST Clock -->
+<div id="ist-clock">
+  <div id="ist-time">00:00:00</div>
+  <div id="ist-date">LOADING…</div>
+</div>
+
+<!-- Camera -->
+<div id="cam-wrap">
+  <video id="cam-feed" playsinline></video>
+  <canvas id="cam-canvas"></canvas>
+</div>
+
+<!-- Gesture badge -->
+<div id="gesture-badge">NO HAND DETECTED</div>
+
+<!-- Page dots -->
+<div id="page-dots">
+  <div class="dot active"></div>
+  <div class="dot"></div>
+  <div class="dot"></div>
+  <div class="dot"></div>
+  <div class="dot"></div>
+  <div class="dot"></div>
+  <div class="dot"></div>
+  <div class="dot"></div>
+</div>
+
+<!-- UI LAYER -->
+<div id="ui-layer">
+
+  <!-- PAGE 0 — IDLE -->
+  <div class="card active" id="page0">
+    <div class="card-title">◈ MIRRORGRID · IDLE</div>
+    <div class="idle-ring"><div class="ri-inner">◈</div></div>
+    <div class="idle-time-big" id="idle-time">00:00</div>
+    <div class="idle-date" id="idle-date">LOADING…</div>
+    <div class="cheat-grid">
+      <div class="cheat-item"><span>✊</span>Sleep</div>
+      <div class="cheat-item"><span>👋</span>Wave — Wake</div>
+      <div class="cheat-item"><span>👍</span>Next Page</div>
+      <div class="cheat-item"><span>✌️</span>News Brief</div>
+      <div class="cheat-item"><span>←</span>Swipe Prev</div>
+      <div class="cheat-item"><span>→</span>Swipe Next</div>
+    </div>
+  </div>
+
+  <!-- PAGE 1 — DAILY BRIEF -->
+  <div class="card" id="page1">
+    <div class="card-title">📋 DAILY BRIEF</div>
+    <div class="weather-row">
+      <div class="chip">🌤 <strong id="brief-temp">32°C</strong></div>
+      <div class="chip">💧 <strong>Humid</strong></div>
+      <div class="chip">📍 <strong>Chennai</strong></div>
+    </div>
+    <div class="agenda-item">
+      <div class="agenda-time">07:00</div>
+      <div class="agenda-desc">Morning workout — 30 min jog, Besant Nagar Beach</div>
+    </div>
+    <div class="agenda-item">
+      <div class="agenda-time">09:00</div>
+      <div class="agenda-desc">Sprint planning standup — Engineering team (Google Meet)</div>
+    </div>
+    <div class="agenda-item">
+      <div class="agenda-time">12:30</div>
+      <div class="agenda-desc">Lunch with Priya @ Murugan Idli Shop, T. Nagar</div>
+    </div>
+    <div class="agenda-item">
+      <div class="agenda-time">15:00</div>
+      <div class="agenda-desc">Code review — MirrorGrid Phase 6 PR #47</div>
+    </div>
+    <div class="agenda-item">
+      <div class="agenda-time">19:30</div>
+      <div class="agenda-desc">Tamil Nadu Tech Meetup — IIT Madras Research Park</div>
+    </div>
+  </div>
+
+  <!-- PAGE 2 — COMMUTE -->
+  <div class="card" id="page2">
+    <div class="card-title">🚗 COMMUTE · OMR → GUINDY</div>
+    <div class="route-info">
+      <div class="chip">📍 <strong>OMR → Guindy</strong></div>
+      <div class="delay-badge" id="commute-delay">⚠ +14 min delay</div>
+      <div class="chip">🚦 <strong>Heavy</strong></div>
+    </div>
+    <div id="commute-map"></div>
+    <div class="alt-route" id="commute-alt">↩ Alternate: GST Road via Chromepet — est. +8 min extra but 60% lighter traffic</div>
+  </div>
+
+  <!-- PAGE 3 — PRIORITY MAIL -->
+  <div class="card" id="page3">
+    <div class="card-title">📬 PRIORITY MAIL</div>
+
+    <div class="mail-item">
+      <div class="mail-header">
+        <span class="mail-sender">Arjun Mehta · CTO</span>
+        <span class="mail-time">08:14 AM</span>
+      </div>
+      <div class="mail-subject">Re: MirrorGrid Phase 6 Roadmap</div>
+      <div class="mail-preview">Hey, reviewed the Phase 6 spec doc you sent last night. The gesture-ML pipeline looks solid. I do want to revisit latency targets — we're seeing ~80ms on the Pi4 and ideally want sub-60ms for the retail demo. Can we sync before the 3 PM review? Also, budget for the OLED panels has been approved, so go ahead and place the order with the Chennai distributor.</div>
+      <span class="mail-tag">ACTION NEEDED</span>
+    </div>
+
+    <div class="mail-item">
+      <div class="mail-header">
+        <span class="mail-sender">Kavya R · Design Lead</span>
+        <span class="mail-time">07:32 AM</span>
+      </div>
+      <div class="mail-subject">UI polish — animation timings feel off on sleep transition</div>
+      <div class="mail-preview">Morning! Quick flag — the sleep overlay fade takes ~0.8s on low-end devices which feels sluggish. Tested on the Galaxy A32 and there's a noticeable jank. Suggest cutting the transition to 0.4s and using transform-only animations to stay on the compositor thread. Figma link with new motion spec is attached. Happy to jump on a quick call.</div>
+      <span class="mail-tag">DESIGN REVIEW</span>
+    </div>
+
+    <div class="mail-item">
+      <div class="mail-header">
+        <span class="mail-sender">HDFC Alerts · Bank</span>
+        <span class="mail-time">06:55 AM</span>
+      </div>
+      <div class="mail-subject">Transaction Alert — ₹4,200 debited</div>
+      <div class="mail-preview">Your HDFC account XX4821 has been debited ₹4,200.00 on 06-May-2026 at 06:54 AM for Zomato Order #ZMT8847211. Available balance: ₹38,450.00. If this transaction was not done by you, call 1800-266-4332 immediately or block your card via NetBanking.</div>
+      <span class="mail-tag">FINANCE</span>
+    </div>
+  </div>
+
+  <!-- PAGE 4 — SYSTEM STATS -->
+  <div class="card" id="page4">
+    <div class="card-title">⚙ SYSTEM STATS</div>
+
+    <div class="stat-row">
+      <div class="stat-label"><span>CPU Usage</span><strong id="cpu-val">0%</strong></div>
+      <div class="bar-track"><div class="bar-fill cpu" id="cpu-bar" style="width:0%"></div></div>
+    </div>
+
+    <div class="stat-row">
+      <div class="stat-label"><span>RAM Usage</span><strong id="ram-val">0%</strong></div>
+      <div class="bar-track"><div class="bar-fill ram" id="ram-bar" style="width:0%"></div></div>
+    </div>
+
+    <div class="stat-row">
+      <div class="stat-label"><span>Render FPS</span><strong id="fps-val">0 fps</strong></div>
+      <div class="bar-track"><div class="bar-fill fps" id="fps-bar" style="width:0%"></div></div>
+    </div>
+
+    <div class="stat-row" style="margin-top:18px;">
+      <div class="stat-label"><span>WS Latency</span><strong id="ping-val">-- ms</strong></div>
+    </div>
+    <div class="stat-label" style="margin-top:8px;">
+      <span>Server Time</span><strong id="srv-time">--:--</strong>
+    </div>
+  </div>
+
+  <!-- PAGE 5 — NEWS (Peace Sign) -->
+  <div class="card" id="page5">
+    <div class="card-title">✌ WORLD NEWS BRIEF</div>
+    <div id="news-content">
+      <div id="news-loading">Loading latest headlines…</div>
+    </div>
+  </div>
+
+  <!-- PAGE 6 — DAILY HABITS -->
+  <div class="card" id="page6">
+    <div class="card-title">✅ DAILY HABITS</div>
+
+    <div class="habit-row">
+      <div class="habit-left">
+        <div class="habit-icon">🏃</div>
+        <div><div class="habit-name">Morning Run</div><div class="habit-meta">30 min · 5 km goal</div></div>
+      </div>
+      <div class="habit-check" onclick="toggleHabit(this)"></div>
+    </div>
+
+    <div class="habit-row">
+      <div class="habit-left">
+        <div class="habit-icon">💧</div>
+        <div><div class="habit-name">Drink 3L Water</div><div class="habit-meta">Track intake through day</div></div>
+      </div>
+      <div class="habit-check" onclick="toggleHabit(this)"></div>
+    </div>
+
+    <div class="habit-row">
+      <div class="habit-left">
+        <div class="habit-icon">📚</div>
+        <div><div class="habit-name">Read 20 Pages</div><div class="habit-meta">Currently: Atomic Habits</div></div>
+      </div>
+      <div class="habit-check" onclick="toggleHabit(this)"></div>
+    </div>
+
+    <div class="habit-row">
+      <div class="habit-left">
+        <div class="habit-icon">🧘</div>
+        <div><div class="habit-name">Meditate 10 Min</div><div class="habit-meta">Headspace · Calm</div></div>
+      </div>
+      <div class="habit-check" onclick="toggleHabit(this)"></div>
+    </div>
+
+    <div class="habit-row" style="border:none;">
+      <div class="habit-left">
+        <div class="habit-icon">🌙</div>
+        <div><div class="habit-name">Sleep by 23:00</div><div class="habit-meta">7-8 hr goal</div></div>
+      </div>
+      <div class="habit-check" onclick="toggleHabit(this)"></div>
+    </div>
+
+    <div class="habit-progress-wrap">
+      <div class="stat-label"><span>Today's Progress</span><strong id="habit-pct">0 / 5</strong></div>
+      <div class="bar-track" style="margin-top:6px;">
+        <div class="bar-fill cpu" id="habit-bar" style="width:0%"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE 7 — FINANCE SNAPSHOT -->
+  <div class="card" id="page7">
+    <div class="card-title">💰 FINANCE SNAPSHOT</div>
+    <div class="finance-grid">
+      <div class="finance-card">
+        <div class="finance-label">Balance</div>
+        <div class="finance-value pos">₹38,450</div>
+        <div class="finance-delta pos">↑ HDFC XX4821</div>
+      </div>
+      <div class="finance-card">
+        <div class="finance-label">Spent Today</div>
+        <div class="finance-value neg">₹4,200</div>
+        <div class="finance-delta neg">↑ vs avg ₹1,800</div>
+      </div>
+      <div class="finance-card">
+        <div class="finance-label">Monthly Budget</div>
+        <div class="finance-value" style="color:var(--accent3)">₹45,000</div>
+        <div class="finance-delta" style="color:var(--muted)">68% used</div>
+      </div>
+      <div class="finance-card">
+        <div class="finance-label">Savings</div>
+        <div class="finance-value pos">₹12,300</div>
+        <div class="finance-delta pos">↑ +₹2,100 this month</div>
+      </div>
+    </div>
+    <div style="margin-top:4px;">
+      <div class="expense-row"><span class="expense-cat">🍕 Food & Dining</span><span class="expense-amt">₹8,400</span></div>
+      <div class="expense-row"><span class="expense-cat">🚗 Transport</span><span class="expense-amt">₹3,200</span></div>
+      <div class="expense-row"><span class="expense-cat">💡 Utilities</span><span class="expense-amt">₹2,100</span></div>
+      <div class="expense-row"><span class="expense-cat">🛍 Shopping</span><span class="expense-amt">₹6,900</span></div>
+    </div>
+  </div>
+
+</div><!-- /ui-layer -->
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- SCRIPTS -->
+<!-- ═══════════════════════════════════════════════════ -->
+
+<!-- Three.js r128 via CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<script>
+/* ─── THREE.JS SETUP ─────────────────────────────────── */
+const canvas3 = document.getElementById('three-canvas');
+const renderer3 = new THREE.WebGLRenderer({ canvas: canvas3, antialias: true, alpha: true });
+renderer3.setPixelRatio(devicePixelRatio);
+renderer3.setSize(innerWidth, innerHeight);
+
+const scene3 = new THREE.Scene();
+const cam3   = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 0.1, 500);
+cam3.position.set(0,0,60);
+
+const N = 3000;
+const geo = new THREE.BufferGeometry();
+const pos = new Float32Array(N * 3);
+for (let i=0; i<N; i++) {
+  const r = 25 + Math.random() * 30;
+  const θ = Math.random() * Math.PI * 2;
+  const φ = Math.acos(2 * Math.random() - 1);
+  pos[i*3]   = r * Math.sin(φ) * Math.cos(θ);
+  pos[i*3+1] = r * Math.cos(φ);
+  pos[i*3+2] = r * Math.sin(φ) * Math.sin(θ);
+}
+geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+
+const mat3 = new THREE.PointsMaterial({ size: 0.55, color: 0x00ffe7, transparent: true, opacity: 0.65 });
+const particles = new THREE.Points(geo, mat3);
+scene3.add(particles);
+
+// Grid
+const grid = new THREE.GridHelper(200, 40, 0x00ffe7, 0x001a16);
+grid.position.y = -30;
+grid.material.opacity = 0.12; grid.material.transparent = true;
+scene3.add(grid);
+
+// FPS tracking
+let fpsFrameCount = 0, fpsLast = performance.now(), currentFPS = 0;
+
+function animateThree() {
+  requestAnimationFrame(animateThree);
+  particles.rotation.y += 0.0008;
+  particles.rotation.x += 0.0002;
+  renderer3.render(scene3, cam3);
+
+  // FPS calculation
+  fpsFrameCount++;
+  const now = performance.now();
+  if (now - fpsLast >= 1000) {
+    currentFPS = Math.round(fpsFrameCount * 1000 / (now - fpsLast));
+    fpsFrameCount = 0;
+    fpsLast = now;
+    updateFPSDisplay(currentFPS);
+  }
+}
+animateThree();
+
+function updateFPSDisplay(fps) {
+  const el = document.getElementById('fps-val');
+  const bar = document.getElementById('fps-bar');
+  if (el) {
+    el.textContent = fps + ' fps';
+    bar.style.width = Math.min(fps / 60 * 100, 100) + '%';
+  }
+}
+
+window.addEventListener('resize', () => {
+  cam3.aspect = innerWidth/innerHeight;
+  cam3.updateProjectionMatrix();
+  renderer3.setSize(innerWidth, innerHeight);
+});
+
+/* ─── STATE ──────────────────────────────────────────── */
+const S = {
+  page: 0, sleeping: true,
+  // Swipe tracking
+  swipeStartX: null,        // x position when hand first appeared in swipe mode
+  swipeInProgress: false,   // are we mid-swipe?
+  lastSwipeAction: 0,       // timestamp of last completed swipe (2s cooldown)
+  gestureLockedUntil: 0,    // global gesture lock timestamp
+  // Per-gesture debounce
+  lastThumb: 0, lastPeace: 0, lastFist: 0, lastWake: 0, fistStart: 0,
+  // Wave detection
+  wavePositions: [],        // rolling x positions for wave detection
+  waveLastDir: 0,           // last direction: -1 left, +1 right
+  waveReverseCount: 0,      // number of direction reversals = wave
+  pointer: { x: 0.5, y: 0.5 },
+};
+
+const TOTAL_PAGES = 8;
+
+/* ─── SLEEP ──────────────────────────────────────────── */
+function setSleep(v) {
+  S.sleeping = v;
+  const ov = document.getElementById('sleep-overlay');
+  const ul = document.getElementById('ui-layer');
+  if (v) {
+    ov.style.opacity = '1'; ov.style.pointerEvents = 'all';
+    ul.style.opacity = '0';
+  } else {
+    ov.style.opacity = '0'; ov.style.pointerEvents = 'none';
+    ul.style.opacity = '1';
+    setPage(0);
+  }
+}
+
+/* ─── SET PAGE ───────────────────────────────────────── */
+function setPage(n) {
+  n = Math.max(0, Math.min(TOTAL_PAGES - 1, n));
+  S.page = n;
+  document.querySelectorAll('.card').forEach((c,i) => c.classList.toggle('active', i===n));
+  document.querySelectorAll('.dot').forEach((d,i) => d.classList.toggle('active', i===n));
+  gsap.to(particles.rotation, { z: n * 0.4, duration: 1.2, ease: 'power3.out' });
+
+  // Lazy-load map on page 2
+  if (n === 2) initMap();
+  // Lazy-load news on page 5
+  if (n === 5) fetchNews();
+}
+
+/* ─── GESTURE LOGIC ──────────────────────────────────── */
+
+// Wave detector: looks for ≥2 direction reversals in the last ~600ms
+function updateWaveDetector(x, now) {
+  // Keep only positions from last 800ms
+  S.wavePositions = S.wavePositions.filter(p => now - p.t < 800);
+  S.wavePositions.push({ x, t: now });
+
+  if (S.wavePositions.length < 4) return false;
+
+  let reversals = 0;
+  let lastDir = 0;
+  for (let i = 1; i < S.wavePositions.length; i++) {
+    const dx = S.wavePositions[i].x - S.wavePositions[i-1].x;
+    if (Math.abs(dx) < 0.015) continue; // ignore micro-jitter
+    const dir = dx > 0 ? 1 : -1;
+    if (lastDir !== 0 && dir !== lastDir) reversals++;
+    lastDir = dir;
+  }
+  return reversals >= 2;
+}
+
+function applyGestureLocal(gesture, pointer) {
+  const now = Date.now();
+  const x = pointer.x;
+  S.pointer = pointer;
+
+  // ── Global gesture cooldown lock (post-swipe) ──
+  if (now < S.gestureLockedUntil) return;
+
+  // CLOSED FIST -> Sleep (800ms hold)
+  if (gesture === 'CLOSED_FIST') {
+    if (!S.fistStart) {
+      S.fistStart = now;
+    } else if (now - S.fistStart >= 800) {
+      if (!S.sleeping) {
+        setSleep(true);
+        S.swipeStartX = null; S.swipeInProgress = false;
+      }
+    }
+    return;
+  } else {
+    S.fistStart = 0;
+  }
+
+  // ── SLEEPING: only WAVE wakes ──
+  if (S.sleeping) {
+    if (gesture === 'OPEN_PALM') {
+      const isWave = updateWaveDetector(x, now);
+      if (isWave && now - S.lastWake > 1200) {
+        S.lastWake = now;
+        S.wavePositions = [];
+        setSleep(false);
+      }
+    }
+    return;
+  }
+
+  // ── AWAKE ──
+
+  // OPEN_PALM: wave detection for home, else just track
+  if (gesture === 'OPEN_PALM') {
+    updateWaveDetector(x, now);
+    // Not a wakeup action when already awake — just home via swipe
+    // Reset swipe tracking since hand is open
+    S.swipeStartX = null; S.swipeInProgress = false;
+    // Move particles with finger
+    gsap.to(particles.position, {
+      x: (x - 0.5) * 20, y: -(pointer.y - 0.5) * 20,
+      duration: 0.6, ease: 'power2.out'
+    });
+    return;
+  }
+
+  // PEACE (V) → jump to news (page 5)
+  if (gesture === 'PEACE') {
+    if (now - S.lastPeace > 1500) {
+      S.lastPeace = now;
+      setPage(5);
+      S.gestureLockedUntil = now + 2000;
+      S.swipeStartX = null; S.swipeInProgress = false;
+    }
+    return;
+  }
+
+  // THUMB_UP / THUMB_DOWN in page 6 (Habits)
+  if (S.page === 6) {
+    if (gesture === 'THUMB_UP' || gesture === 'THUMB_DOWN') {
+      if (now - S.lastThumb > 1200) {
+        S.lastThumb = now;
+        const unchecked = document.querySelectorAll('.habit-check:not(.done)');
+        if (unchecked.length > 0) {
+          if (gesture === 'THUMB_UP') {
+            unchecked[0].classList.add('done');
+            unchecked[0].textContent = '✓';
+          } else {
+            unchecked[0].classList.add('done', 'skipped');
+            unchecked[0].textContent = '⏭';
+            unchecked[0].style.color = '#ff2d78';
+            unchecked[0].style.borderColor = '#ff2d78';
+            unchecked[0].style.background = 'rgba(255,45,120,0.15)';
+          }
+          const doneCount = document.querySelectorAll('.habit-check.done').length;
+          const totalCount = document.querySelectorAll('.habit-check').length;
+          document.getElementById('habit-pct').textContent = doneCount + ' / ' + totalCount;
+          document.getElementById('habit-bar').style.width = (doneCount/totalCount*100) + '%';
+        }
+        S.gestureLockedUntil = now + 2000;
+        S.swipeStartX = null; S.swipeInProgress = false;
+      }
+      return;
+    }
+  }
+
+  // THUMB_UP → next page (default fallback)
+  if (gesture === 'THUMB_UP') {
+    if (now - S.lastThumb > 1200) {
+      S.lastThumb = now;
+      setPage(S.page + 1);
+      S.gestureLockedUntil = now + 2000;
+      S.swipeStartX = null; S.swipeInProgress = false;
+    }
+    return;
+  }
+
+  // ── SWIPE via POINTING gesture ──
+  // A swipe = hand moves from one side to the other while POINTING
+  // Only 1 page change per full swipe; 2s cooldown after
+  if (gesture === 'POINTING') {
+    if (now - S.lastSwipeAction > 2000) {
+      // Start tracking swipe
+      if (S.swipeStartX === null) {
+        S.swipeStartX = x;
+        S.swipeInProgress = true;
+      } else if (S.swipeInProgress) {
+        const delta = x - S.swipeStartX;
+        // Require a decisive movement (>18% of screen width)
+        if (Math.abs(delta) > 0.18) {
+          // delta > 0 = hand moved RIGHT → previous page
+          // delta < 0 = hand moved LEFT  → next page
+          setPage(delta < 0 ? S.page + 1 : S.page - 1);
+          S.lastSwipeAction = now;
+          S.gestureLockedUntil = now + 2000;
+          S.swipeStartX = null;
+          S.swipeInProgress = false;
+        }
+      }
+    }
+    // Move particles with finger
+    gsap.to(particles.position, {
+      x: (x - 0.5) * 20, y: -(pointer.y - 0.5) * 20,
+      duration: 0.5, ease: 'power2.out'
+    });
+    return;
+  }
+
+  // Any other gesture resets swipe state
+  S.swipeStartX = null; S.swipeInProgress = false;
+}
+
+/* ─── WEBSOCKET ──────────────────────────────────────── */
+let ws, wsConnected = false, wsPingStart = 0;
+function connectWS() {
+  ws = new WebSocket('ws://' + window.location.host + '/ws/stream');
+  ws.onopen = () => {
+    wsConnected = true;
+    document.getElementById('hud-status').textContent = '⬤ CONNECTED';
+    document.getElementById('hud-status').style.color = '#00ffe7';
+  };
+  ws.onmessage = (e) => {
+    const d = JSON.parse(e.data);
+    
+    if (d.type === 'state_update') {
+      if (d.page !== undefined) setPage(d.page);
+      if (d.mode !== undefined) setSleep(d.mode === 'sleep');
+    } else if (d.type === 'telemetry') {
+      // CPU / RAM
+      const cpu = Math.round(d.cpu);
+      const ram = Math.round(d.ram);
+      document.getElementById('cpu-val').textContent = cpu + '%';
+      document.getElementById('cpu-bar').style.width  = cpu + '%';
+      document.getElementById('ram-val').textContent = ram + '%';
+      document.getElementById('ram-bar').style.width  = ram + '%';
+      document.getElementById('srv-time').textContent = d.time || '--:--';
+
+      // Weather
+      if (d.weather) document.getElementById('brief-temp').textContent = d.weather.temp;
+      // Traffic
+      if (d.traffic) {
+        document.getElementById('commute-delay').textContent = '⚠ +' + d.traffic.delay + ' delay';
+      }
+    }
+
+    // WS latency estimate
+    if (wsPingStart) {
+      document.getElementById('ping-val').textContent = (Date.now() - wsPingStart) + ' ms';
+    }
+    wsPingStart = Date.now();
+
+    // NOTE: Browser is authoritative for sleep/page state.
+  };
+  ws.onclose = () => {
+    wsConnected = false;
+    document.getElementById('hud-status').textContent = '⬤ RECONNECTING…';
+    document.getElementById('hud-status').style.color = '#ffe600';
+    setTimeout(connectWS, 2000);
+  };
+}
+connectWS();
+
+/* ─── SEND GESTURE TO SERVER ─────────────────────────── */
+function sendGesture(gesture, pointer) {
+  if (ws && wsConnected) {
+    ws.send(JSON.stringify({ gesture, pointer }));
+  } else {
+    // Standalone fallback: process locally if websocket server is offline
+    applyGestureLocal(gesture, pointer);
+  }
+}
+
+/* ─── MEDIAPIPE HANDS ────────────────────────────────── */
+const videoEl  = document.getElementById('cam-feed');
+const overlayCanvas = document.getElementById('cam-canvas');
+const overlayCtx    = overlayCanvas.getContext('2d');
+
+function fingersUp(lm) {
+  const up = [0,0,0,0,0];
+  // Thumb (compare x for mirrored view)
+  up[0] = lm[4].x < lm[3].x ? 1 : 0;
+  // Others: tip y < pip y means up
+  [[8,6],[12,10],[16,14],[20,18]].forEach(([tip,pip],i) => {
+    up[i+1] = lm[tip].y < lm[pip].y ? 1 : 0;
+  });
+  return up;
+}
+
+function detectGesture(lm) {
+  const f = fingersUp(lm);
+  const sum = f.reduce((a,b)=>a+b,0);
+  if (sum === 0) return 'CLOSED_FIST';
+  if (sum === 5) return 'OPEN_PALM';
+  if (f[0]===1 && f[1]===0 && f[2]===0 && f[3]===0 && f[4]===0) return 'THUMB_UP';
+  if (f[0]===0 && f[1]===1 && f[2]===0 && f[3]===0 && f[4]===0) return 'POINTING';
+  if (f[0]===0 && f[1]===1 && f[2]===1 && f[3]===0 && f[4]===0) return 'PEACE';
+  return 'NONE';
+}
+
+// Load MediaPipe Hands via CDN
+const handsScript = document.createElement('script');
+handsScript.src = 'https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js';
+handsScript.onload = initMediaPipe;
+document.head.appendChild(handsScript);
+
+function initMediaPipe() {
+  const hands = new Hands({ locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}` });
+  hands.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.7, minTrackingConfidence: 0.6 });
+
+  hands.onResults(results => {
+    overlayCanvas.width  = overlayCanvas.offsetWidth;
+    overlayCanvas.height = overlayCanvas.offsetHeight;
+    overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+
+    if (!results.multiHandLandmarks || !results.multiHandLandmarks.length) {
+      document.getElementById('gesture-badge').textContent = 'NO HAND DETECTED';
+      return;
+    }
+
+    const lm = results.multiHandLandmarks[0];
+
+    // Draw landmarks
+    lm.forEach(p => {
+      overlayCtx.beginPath();
+      overlayCtx.arc(p.x * overlayCanvas.width, p.y * overlayCanvas.height, 3, 0, Math.PI*2);
+      overlayCtx.fillStyle = '#ff2d78';
+      overlayCtx.fill();
+    });
+
+    const gesture = detectGesture(lm);
+    const pointer = { x: lm[9].x, y: lm[9].y };
+
+    document.getElementById('gesture-badge').textContent = gesture;
+
+    sendGesture(gesture, pointer);
+  });
+
+  // Camera
+  const camScript = document.createElement('script');
+  camScript.src = 'https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js';
+  camScript.onload = () => {
+    navigator.mediaDevices.getUserMedia({ video: { width:640, height:480 }, audio: false })
+      .then(stream => {
+        videoEl.srcObject = stream;
+        videoEl.play();
+        const camera = new Camera(videoEl, {
+          onFrame: async () => { await hands.send({ image: videoEl }); },
+          width: 640, height: 480
+        });
+        camera.start();
+      })
+      .catch(err => console.warn('Camera error:', err));
+  };
+  document.head.appendChild(camScript);
+}
+
+/* ─── CLOCK (IST) ────────────────────────────────────── */
+function updateClock() {
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour12: false });
+  let dateStr = now.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', weekday: 'long', day: '2-digit', month: 'short', year: 'numeric' });
+  dateStr = dateStr.toUpperCase().replace(',', '');
+
+  const hh = timeStr.split(':')[0];
+  const mm = timeStr.split(':')[1];
+  const ss = timeStr.split(':')[2];
+
+  // IST clock top-right
+  const istTimeEl = document.getElementById('ist-time');
+  const istDateEl = document.getElementById('ist-date');
+  if (istTimeEl) istTimeEl.textContent = timeStr;
+  if (istDateEl) istDateEl.textContent = dateStr + ' · IST';
+
+  // Idle card clock (no seconds for readability)
+  document.getElementById('idle-time').textContent   = hh + ':' + mm;
+  document.getElementById('idle-date').textContent   = dateStr;
+  document.getElementById('sleep-clock').textContent = hh + ':' + mm + ':' + ss;
+}
+setInterval(updateClock, 1000); updateClock();
+
+/* ─── MAP (Leaflet) ──────────────────────────────────── */
+let mapInit = false;
+function initMap() {
+  if (mapInit) return; mapInit = true;
+  const map = L.map('commute-map', { zoomControl: false, attributionControl: false })
+               .setView([12.9716, 80.2209], 12);
+  L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', { maxZoom: 18 }).addTo(map);
+
+  // OMR start & Guindy end markers
+  const omrLatLng    = [12.9010, 80.2279]; // Perungudi/OMR
+  const guindyLatLng = [13.0067, 80.2206]; // Guindy
+
+  const iconStyle = (color) => L.divIcon({
+    html: `<div style="width:14px;height:14px;border-radius:50%;background:${color};border:2px solid #fff;box-shadow:0 0 8px ${color}"></div>`,
+    iconSize:[14,14], className:''
+  });
+
+  L.marker(omrLatLng, { icon: iconStyle('#00ffe7') }).addTo(map).bindPopup('Start: OMR');
+  L.marker(guindyLatLng, { icon: iconStyle('#ff2d78') }).addTo(map).bindPopup('End: Guindy');
+
+  // Draw polyline route (approximated key waypoints)
+  const route = [
+    [12.9010, 80.2279],
+    [12.9200, 80.2300],
+    [12.9390, 80.2350],
+    [12.9550, 80.2200],
+    [12.9700, 80.2180],
+    [12.9850, 80.2190],
+    [13.0067, 80.2206]
+  ];
+  L.polyline(route, { color: '#00ffe7', weight: 4, opacity: 0.85 }).addTo(map);
+  setTimeout(() => map.invalidateSize(), 200);
+}
+
+/* ─── NEWS (AI-powered) ──────────────────────────────── */
+let newsFetched = false;
+async function fetchNews() {
+  if (newsFetched) return; newsFetched = true;
+  const container = document.getElementById('news-content');
+  container.innerHTML = '<div id="news-loading">Fetching world headlines…</div>';
+
+  try {
+    const res = await fetch('/api/news');
+    const stories = await res.json();
+
+    container.innerHTML = stories.map(s => `
+      <div class="news-item">
+        <div class="news-source">${s.source}</div>
+        <div class="news-headline">${s.headline}</div>
+        <div class="news-blurb">${s.summary}</div>
+      </div>
+    `).join('');
+  } catch(e) {
+    container.innerHTML = `
+      <div class="news-item">
+        <div class="news-source">AP News</div>
+        <div class="news-headline">Global Markets Rally on Rate Cut Expectations</div>
+        <div class="news-blurb">World markets rose sharply as central banks signal a potential pause in rate hikes amid cooling inflation data.</div>
+      </div>
+      <div class="news-item">
+        <div class="news-source">Reuters</div>
+        <div class="news-headline">UN Climate Summit Reaches Landmark Agreement</div>
+        <div class="news-blurb">Member nations agreed on new carbon reduction targets, pledging net-zero emissions by 2045 in a historic vote.</div>
+      </div>
+      <div class="news-item">
+        <div class="news-source">BBC World</div>
+        <div class="news-headline">Tech Giants Face New AI Regulation Framework</div>
+        <div class="news-blurb">The EU unveiled sweeping AI governance rules requiring transparency and human oversight for high-risk applications.</div>
+      </div>
+      <div class="news-item">
+        <div class="news-source">The Hindu</div>
+        <div class="news-headline">India Q1 GDP Growth Surprises at 7.2%</div>
+        <div class="news-blurb">India's economy outpaced forecasts, driven by strong manufacturing output and robust domestic consumption.</div>
+      </div>
+    `;
+  }
+}
+
+/* ─── HABITS ─────────────────────────────────────────── */
+function toggleHabit(el) {
+  if (!el) return;
+  el.classList.toggle('done');
+  el.textContent = el.classList.contains('done') ? '✓' : '';
+  const done = document.querySelectorAll('.habit-check.done').length;
+  const total = document.querySelectorAll('.habit-check').length;
+  document.getElementById('habit-pct').textContent = done + ' / ' + total;
+  document.getElementById('habit-bar').style.width = (done/total*100) + '%';
+}
+
+/* ─── KEYBOARD FALLBACK ──────────────────────────────── */
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight') setPage(S.page + 1);
+  if (e.key === 'ArrowLeft')  setPage(S.page - 1);
+  if (e.key === 'w' || e.key === 'W') setSleep(false);
+  if (e.key === 's' || e.key === 'S') setSleep(true);
+  if (e.key === 'h' || e.key === 'H') { setSleep(false); setPage(0); }
+});
+
+/* ─── INIT ───────────────────────────────────────────── */
+setSleep(true);
+</script>
+</body>
+</html>

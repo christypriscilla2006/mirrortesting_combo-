@@ -1,0 +1,852 @@
+/* ════════════════════════════════════════════════════════════
+   MIrrorGrid OS — Cyberpunk Design System
+   Palette: #000000 (void) + #00f3ff (neon cyan) + #050505 (deep)
+   All animated elements use transform: translateZ(0) for GPU layer
+   ════════════════════════════════════════════════════════════ */
+
+/* ── TOKENS ─────────────────────────────────────────────── */
+:root {
+    --cyan:          #00f3ff;
+    --cyan-dim:      rgba(0, 243, 255, 0.08);
+    --cyan-mid:      rgba(0, 243, 255, 0.18);
+    --cyan-border:   rgba(0, 243, 255, 0.35);
+    --cyan-strong:   rgba(0, 243, 255, 0.7);
+    --black:         #000000;
+    --deep:          #050505;
+    --panel-bg:      rgba(0, 0, 0, 0.72);
+
+    --glow-sm:   0 0 6px var(--cyan),  0 0 12px var(--cyan);
+    --glow-md:   0 0 8px var(--cyan),  0 0 24px var(--cyan),  0 0 48px rgba(0,243,255,0.4);
+    --glow-lg:   0 0 12px var(--cyan), 0 0 40px var(--cyan),  0 0 80px rgba(0,243,255,0.5);
+    --glow-text: 0 0 8px var(--cyan),  0 0 16px var(--cyan);
+
+    --font-head: 'Orbitron', sans-serif;
+    --font-mono: 'Share Tech Mono', monospace;
+    --font-intro:'Great Vibes', cursive;
+
+    --transition-fast:   0.15s ease;
+    --transition-smooth: 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    --transition-slow:   1.2s cubic-bezier(0.16, 1, 0.3, 1);
+
+    --header-h: 64px;
+    --footer-h: 48px;
+    --panel-radius: 4px;
+}
+
+/* ── RESET ───────────────────────────────────────────────── */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: var(--black);
+    color: var(--cyan);
+    font-family: var(--font-mono);
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ════════════════════════════════════════════════════════════
+   INTRO SEQUENCE
+   ════════════════════════════════════════════════════════════ */
+#intro-container {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: var(--black);
+    z-index: 200;
+    transition: opacity 1.5s ease-in-out;
+    transform: translateZ(0);
+}
+
+.intro-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+}
+
+.hello-text {
+    font-family: var(--font-intro);
+    font-size: clamp(7rem, 18vw, 14rem);
+    color: #fff;
+    opacity: 0;
+    animation:
+        neonFadeIn   2s ease-out forwards,
+        neonPulse    2s infinite alternate 2s;
+}
+
+.intro-sub {
+    font-family: var(--font-mono);
+    font-size: clamp(0.65rem, 1.5vw, 0.85rem);
+    letter-spacing: 0.35em;
+    color: var(--cyan-strong);
+    opacity: 0;
+    animation: fadeUp 0.8s ease-out forwards 1.8s;
+    text-shadow: var(--glow-sm);
+}
+
+.intro-bar {
+    width: clamp(160px, 28vw, 340px);
+    height: 2px;
+    background: rgba(0, 243, 255, 0.15);
+    border-radius: 2px;
+    overflow: hidden;
+    opacity: 0;
+    animation: fadeUp 0.6s ease-out forwards 2.2s;
+}
+
+.intro-bar-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--cyan);
+    box-shadow: var(--glow-sm);
+    animation: barFill 1.8s cubic-bezier(0.16, 1, 0.3, 1) forwards 2.4s;
+}
+
+@keyframes neonFadeIn {
+    from { opacity: 0; text-shadow: none; }
+    to   {
+        opacity: 1;
+        text-shadow:
+            0 0 10px #fff, 0 0 20px #fff,
+            0 0 30px var(--cyan), 0 0 60px var(--cyan),
+            0 0 100px var(--cyan), 0 0 160px rgba(0,243,255,0.5);
+    }
+}
+
+@keyframes neonPulse {
+    from {
+        text-shadow:
+            0 0 10px #fff, 0 0 20px #fff,
+            0 0 30px var(--cyan), 0 0 60px var(--cyan),
+            0 0 100px var(--cyan);
+    }
+    to {
+        text-shadow:
+            0 0 5px #fff,  0 0 10px #fff,
+            0 0 20px var(--cyan), 0 0 40px var(--cyan),
+            0 0 70px rgba(0,243,255,0.5);
+    }
+}
+
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0);   }
+}
+
+@keyframes barFill {
+    from { width: 0%; }
+    to   { width: 100%; }
+}
+
+/* ════════════════════════════════════════════════════════════
+   MAIN APP
+   ════════════════════════════════════════════════════════════ */
+#main-app {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    opacity: 0;
+    transition: opacity 1.8s ease-in-out;
+    transform: translateZ(0);
+}
+
+#main-app.visible { opacity: 1; }
+
+/* ── Canvas background ───────────────────────────────────── */
+#canvas-container {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+}
+
+/* ── Scanlines CRT overlay ───────────────────────────────── */
+#scanlines {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+        to bottom,
+        transparent,
+        transparent 2px,
+        rgba(0, 0, 0, 0.08) 2px,
+        rgba(0, 0, 0, 0.08) 4px
+    );
+    animation: scanlineScroll 8s linear infinite;
+    opacity: 0.4;
+    transform: translateZ(0);
+}
+
+@keyframes scanlineScroll {
+    from { background-position: 0 0; }
+    to   { background-position: 0 100px; }
+}
+
+/* ════════════════════════════════════════════════════════════
+   SLEEP OVERLAY
+   ════════════════════════════════════════════════════════════ */
+#sleep-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 50;
+    background: var(--black);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--transition-slow);
+    transform: translateZ(0);
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
+    padding: 24px;
+}
+
+.sleep-indicator {
+    opacity: 0;
+    transition: opacity 0.5s ease 1s;
+}
+
+.sleep-dot {
+    display: block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--cyan);
+    box-shadow: var(--glow-sm);
+    animation: sleepPulse 3s ease-in-out infinite;
+}
+
+@keyframes sleepPulse {
+    0%, 100% { opacity: 0.3; }
+    50%       { opacity: 1;   }
+}
+
+/* SLEEP state */
+body.state-sleep #sleep-overlay {
+    opacity: 1;
+    pointer-events: all;
+}
+body.state-sleep #sleep-overlay .sleep-indicator {
+    opacity: 1;
+}
+
+/* ════════════════════════════════════════════════════════════
+   UI LAYER
+   ════════════════════════════════════════════════════════════ */
+#ui-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    opacity: 0;
+    transform: translateZ(0);
+    transition: opacity var(--transition-smooth);
+    pointer-events: none;
+}
+
+body.state-wake   #ui-layer,
+body.state-task   #ui-layer,
+body.state-weather #ui-layer,
+body.state-dismissed #ui-layer {
+    opacity: 1;
+    pointer-events: all;
+}
+
+/* ════════════════════════════════════════════════════════════
+   HEADER BAR
+   ════════════════════════════════════════════════════════════ */
+#header-bar {
+    height: var(--header-h);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 28px;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.85) 0%, transparent 100%);
+    border-bottom: 1px solid var(--cyan-border);
+    transform: translateZ(0);
+    flex-shrink: 0;
+}
+
+/* System ID */
+#system-id {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.25em;
+    color: var(--cyan-strong);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.sys-label { color: var(--cyan); text-shadow: var(--glow-sm); }
+.sys-sep   { opacity: 0.4; }
+
+/* Clock */
+#clock-widget {
+    text-align: center;
+}
+
+#clock-time {
+    font-family: var(--font-head);
+    font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+    font-weight: 700;
+    color: var(--cyan);
+    text-shadow: var(--glow-md);
+    letter-spacing: 0.12em;
+    line-height: 1;
+    transform: translateZ(0);
+}
+
+#clock-date {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.3em;
+    color: var(--cyan-strong);
+    margin-top: 3px;
+    text-shadow: var(--glow-sm);
+}
+
+/* Status dots */
+#system-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.62rem;
+    letter-spacing: 0.15em;
+    color: rgba(0, 243, 255, 0.4);
+}
+
+.status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgba(0, 243, 255, 0.25);
+    transition: background var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.status-dot.active {
+    background: var(--cyan);
+    box-shadow: var(--glow-sm);
+    animation: statusBlink 2.5s ease-in-out infinite;
+}
+
+@keyframes statusBlink {
+    0%, 100% { opacity: 1;   }
+    50%       { opacity: 0.5; }
+}
+
+.status-label { color: rgba(0, 243, 255, 0.35); }
+.status-sep   { color: rgba(0, 243, 255, 0.2); margin: 0 2px; }
+
+/* ════════════════════════════════════════════════════════════
+   MODULE AREA
+   ════════════════════════════════════════════════════════════ */
+#module-area {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    padding: 20px 28px;
+    overflow: hidden;
+    align-items: start;
+}
+
+/* ── MODULE PANEL ─────────────────────────────────────────── */
+.module {
+    background: var(--panel-bg);
+    border: 1px solid var(--cyan-border);
+    border-radius: var(--panel-radius);
+    padding: 0;
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(16px) translateZ(0);
+    transition:
+        opacity    var(--transition-smooth),
+        transform  var(--transition-smooth),
+        border-color var(--transition-fast),
+        box-shadow var(--transition-fast);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    position: relative;
+}
+
+/* Corner accent marks */
+.module::before,
+.module::after {
+    content: '';
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border-color: var(--cyan);
+    border-style: solid;
+    opacity: 0.6;
+}
+.module::before {
+    top: -1px; left: -1px;
+    border-width: 2px 0 0 2px;
+}
+.module::after {
+    bottom: -1px; right: -1px;
+    border-width: 0 2px 2px 0;
+}
+
+/* Active state for focused module */
+.module.module--active {
+    border-color: var(--cyan);
+    box-shadow: var(--glow-sm), inset 0 0 30px rgba(0, 243, 255, 0.04);
+}
+
+/* Page 0 (Idle) or Dismissed: Hide all modules */
+body.page-0 .module,
+body.state-dismissed .module {
+    opacity: 0;
+    transform: translateY(8px) translateZ(0);
+    pointer-events: none;
+}
+
+/* Page 1 (Briefing) */
+body.page-1 .page-1-module {
+    opacity: 1;
+    transform: translateY(0) translateZ(0);
+    border-color: var(--cyan);
+    box-shadow: var(--glow-md);
+    pointer-events: all;
+}
+
+/* Page 2 (Traffic) */
+body.page-2 .page-2-module {
+    opacity: 1;
+    transform: translateY(0) translateZ(0);
+    border-color: var(--cyan);
+    box-shadow: var(--glow-md);
+    grid-column: 1 / -1;
+    pointer-events: all;
+}
+
+/* Page 3 (Emails) */
+body.page-3 .page-3-module {
+    opacity: 1;
+    transform: translateY(0) translateZ(0);
+    border-color: var(--cyan);
+    box-shadow: var(--glow-md);
+    grid-column: 1 / -1;
+    pointer-events: all;
+}
+
+/* Page 4 (Telemetry) */
+body.page-4 .page-4-module {
+    opacity: 1;
+    transform: translateY(0) translateZ(0);
+    border-color: var(--cyan);
+    box-shadow: var(--glow-md);
+    grid-column: 1 / -1;
+    pointer-events: all;
+}
+
+/* Transition delays for stagger */
+#module-task    { transition-delay: 0s;     }
+#module-weather { transition-delay: 0.08s; }
+
+/* ── Module Header ───────────────────────────────────────── */
+.module-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 18px 12px;
+    border-bottom: 1px solid var(--cyan-border);
+    background: var(--cyan-dim);
+}
+
+.module-icon {
+    font-size: 1rem;
+    color: var(--cyan);
+    text-shadow: var(--glow-sm);
+    flex-shrink: 0;
+}
+
+.module-title {
+    font-family: var(--font-head);
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.3em;
+    color: var(--cyan);
+    text-shadow: var(--glow-sm);
+    flex: 1;
+}
+
+.module-badge {
+    font-family: var(--font-mono);
+    font-size: 0.58rem;
+    letter-spacing: 0.15em;
+    padding: 2px 8px;
+    border: 1px solid var(--cyan-border);
+    border-radius: 2px;
+    color: var(--cyan);
+    background: var(--cyan-dim);
+    text-shadow: var(--glow-sm);
+    animation: badgePulse 3s ease-in-out infinite;
+}
+
+@keyframes badgePulse {
+    0%, 100% { border-color: var(--cyan-border); }
+    50%       { border-color: var(--cyan-strong); box-shadow: var(--glow-sm); }
+}
+
+/* ── Module Body ─────────────────────────────────────────── */
+.module-body {
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+/* ════════════════════════════════════════════════════════════
+   TASK MODULE
+   ════════════════════════════════════════════════════════════ */
+#task-title {
+    font-family: var(--font-head);
+    font-size: clamp(0.85rem, 2vw, 1.15rem);
+    font-weight: 700;
+    color: #fff;
+    text-shadow: var(--glow-text);
+    letter-spacing: 0.06em;
+    line-height: 1.3;
+}
+
+.task-due {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.2em;
+    color: var(--cyan-strong);
+    text-shadow: var(--glow-sm);
+}
+
+/* Subtask list */
+.subtask-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.subtask-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    color: rgba(0, 243, 255, 0.55);
+    transition: color var(--transition-fast);
+    transform: translateZ(0);
+}
+
+.subtask-item.done {
+    color: rgba(0, 243, 255, 0.3);
+    text-decoration: line-through;
+    text-decoration-color: rgba(0, 243, 255, 0.25);
+}
+
+.subtask-check {
+    width: 14px;
+    height: 14px;
+    border: 1px solid var(--cyan-border);
+    border-radius: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 9px;
+    color: var(--cyan);
+    transition: all var(--transition-fast);
+}
+
+.subtask-item.done .subtask-check {
+    background: var(--cyan-dim);
+    border-color: var(--cyan-strong);
+    box-shadow: var(--glow-sm);
+}
+
+/* Progress bar */
+.task-progress { margin-top: 4px; }
+
+.progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.2em;
+    color: rgba(0, 243, 255, 0.45);
+    margin-bottom: 6px;
+}
+
+.progress-track {
+    height: 3px;
+    background: rgba(0, 243, 255, 0.1);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--cyan);
+    box-shadow: var(--glow-sm);
+    border-radius: 2px;
+    transition: width 1s cubic-bezier(0.16, 1, 0.3, 1);
+    transform: translateZ(0);
+}
+
+/* ════════════════════════════════════════════════════════════
+   WEATHER MODULE
+   ════════════════════════════════════════════════════════════ */
+.weather-main {
+    display: flex;
+    align-items: flex-start;
+    gap: 24px;
+}
+
+.weather-temp {
+    font-family: var(--font-head);
+    font-size: clamp(2.4rem, 6vw, 4rem);
+    font-weight: 900;
+    color: var(--cyan);
+    text-shadow: var(--glow-lg);
+    line-height: 1;
+    letter-spacing: -0.02em;
+    flex-shrink: 0;
+}
+
+.weather-meta {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    padding-top: 6px;
+}
+
+.weather-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+    border-bottom: 1px solid rgba(0, 243, 255, 0.07);
+    padding-bottom: 5px;
+}
+
+.weather-key {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.2em;
+    color: rgba(0, 243, 255, 0.4);
+}
+
+.weather-val {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    color: var(--cyan);
+    text-shadow: var(--glow-sm);
+}
+
+/* Forecast strip */
+.weather-forecast {
+    display: flex;
+    gap: 10px;
+}
+
+.forecast-card {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    padding: 10px 6px;
+    border: 1px solid var(--cyan-border);
+    border-radius: var(--panel-radius);
+    background: var(--cyan-dim);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.forecast-card:hover {
+    border-color: var(--cyan-strong);
+    box-shadow: var(--glow-sm);
+}
+
+.forecast-day {
+    font-family: var(--font-mono);
+    font-size: 0.58rem;
+    letter-spacing: 0.2em;
+    color: rgba(0, 243, 255, 0.5);
+}
+
+.forecast-icon {
+    font-size: 1.2rem;
+    line-height: 1;
+}
+
+.forecast-hi {
+    font-family: var(--font-head);
+    font-size: 0.8rem;
+    color: var(--cyan);
+    text-shadow: var(--glow-sm);
+}
+
+.forecast-lo {
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    color: rgba(0, 243, 255, 0.35);
+}
+
+/* ════════════════════════════════════════════════════════════
+   GESTURE HUD  (flash-in / fade-out)
+   ════════════════════════════════════════════════════════════ */
+#gesture-hud {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) translateZ(0);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    z-index: 30;
+}
+
+#gesture-hud.visible {
+    opacity: 1;
+}
+
+#gesture-icon {
+    font-size: 3.5rem;
+    line-height: 1;
+    filter: drop-shadow(0 0 12px var(--cyan));
+    animation: gestureIconPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    transform: translateZ(0);
+}
+
+#gesture-label {
+    font-family: var(--font-head);
+    font-size: 0.75rem;
+    letter-spacing: 0.4em;
+    color: var(--cyan);
+    text-shadow: var(--glow-md);
+}
+
+@keyframes gestureIconPop {
+    from { transform: scale(0.5) translateZ(0); opacity: 0; }
+    to   { transform: scale(1.0) translateZ(0); opacity: 1; }
+}
+
+/* ════════════════════════════════════════════════════════════
+   FOOTER BAR
+   ════════════════════════════════════════════════════════════ */
+#footer-bar {
+    height: var(--footer-h);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 28px;
+    background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 100%);
+    border-top: 1px solid var(--cyan-border);
+    flex-shrink: 0;
+    transform: translateZ(0);
+}
+
+.footer-gesture-hints {
+    display: flex;
+    gap: 20px;
+}
+
+.hint {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.12em;
+    color: rgba(0, 243, 255, 0.35);
+}
+
+.hint-key {
+    font-size: 0.85rem;
+    opacity: 0.7;
+}
+
+.footer-sys {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.18em;
+    color: rgba(0, 243, 255, 0.3);
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.footer-sep { opacity: 0.3; }
+
+/* ════════════════════════════════════════════════════════════
+   BOOT STATE (pre-intro)
+   ════════════════════════════════════════════════════════════ */
+body.state-boot #ui-layer  { opacity: 0; pointer-events: none; }
+body.state-boot #sleep-overlay { opacity: 0; }
+
+/* ════════════════════════════════════════════════════════════
+   NEON EDGE GLOW (subtle frame around entire screen)
+   ════════════════════════════════════════════════════════════ */
+#main-app::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+    box-shadow: inset 0 0 80px rgba(0, 243, 255, 0.04);
+    border: 1px solid rgba(0, 243, 255, 0.06);
+}
+
+/* ════════════════════════════════════════════════════════════
+   RESPONSIVE — portrait / landscape adjustments
+   ════════════════════════════════════════════════════════════ */
+@media (max-width: 768px), (orientation: portrait) {
+    #module-area {
+        grid-template-columns: 1fr;
+    }
+
+    body.state-task #module-task,
+    body.state-weather #module-weather {
+        grid-column: 1;
+    }
+
+    .weather-main {
+        flex-direction: column;
+        gap: 14px;
+    }
+
+    .footer-gesture-hints {
+        gap: 10px;
+    }
+}
+
+/* ════════════════════════════════════════════════════════════
+   UTILITY — Hardware acceleration hint for all transitions
+   ════════════════════════════════════════════════════════════ */
+.module,
+#header-bar,
+#footer-bar,
+#sleep-overlay,
+#gesture-hud,
+#clock-time,
+.progress-fill,
+.subtask-item {
+    will-change: transform, opacity;
+}

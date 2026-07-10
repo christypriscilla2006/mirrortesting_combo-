@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Automated 3D Saturn Particle System</title>
+
+    <!-- Load Handwriting Font for the "Hello" intro -->
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #050505;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        /* --- Intro Animation Styles --- */
+        #intro-container {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #050505;
+            z-index: 100;
+            transition: opacity 1.5s ease-in-out;
+        }
+
+        .hello-text {
+            font-family: 'Great Vibes', cursive;
+            /* Scales smoothly based on screen size, maxing out at 16rem */
+            font-size: clamp(8rem, 20vw, 16rem);
+            margin: 0;
+            padding: 20px;
+            color: #fff;
+            /* Solid white core */
+            opacity: 0;
+
+            /* Bright Neon Pink Shadow & Smooth Fade In */
+            animation: neonFadeIn 2s ease-out forwards, neonPulse 2s infinite alternate 2s;
+        }
+
+        /* Fades in the text and the bright pink glow */
+        @keyframes neonFadeIn {
+            0% {
+                opacity: 0;
+                text-shadow: none;
+            }
+
+            100% {
+                opacity: 1;
+                text-shadow:
+                    0 0 10px #fff,
+                    0 0 20px #fff,
+                    0 0 30px #ff00aa,
+                    0 0 40px #ff00aa,
+                    0 0 70px #ff00aa,
+                    0 0 80px #ff00aa,
+                    0 0 100px #ff00aa,
+                    0 0 150px #ff00aa;
+            }
+        }
+
+        /* Subtle pulsing effect for the neon glow */
+        @keyframes neonPulse {
+            from {
+                text-shadow:
+                    0 0 10px #fff,
+                    0 0 20px #fff,
+                    0 0 30px #ff00aa,
+                    0 0 40px #ff00aa,
+                    0 0 70px #ff00aa,
+                    0 0 80px #ff00aa,
+                    0 0 100px #ff00aa,
+                    0 0 150px #ff00aa;
+            }
+
+            to {
+                text-shadow:
+                    0 0 5px #fff,
+                    0 0 10px #fff,
+                    0 0 20px #ff00aa,
+                    0 0 30px #ff00aa,
+                    0 0 50px #ff00aa,
+                    0 0 60px #ff00aa,
+                    0 0 80px #ff00aa,
+                    0 0 100px #ff00aa;
+            }
+        }
+
+        /* --- Main 3D App Styles --- */
+        #main-app {
+            opacity: 0;
+            transition: opacity 2s ease-in-out;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* Minimalist textless UI panel */
+        #ui-panel {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: 50px;
+            z-index: 10;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        input[type="color"] {
+            -webkit-appearance: none;
+            border: none;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            cursor: pointer;
+            background: none;
+        }
+
+        input[type="color"]::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+
+        input[type="color"]::-webkit-color-swatch {
+            border: none;
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+        }
+    </style>
+
+    <!-- Three.js + Post Processing Import Map -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.158.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.158.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+
+<body>
+
+    <!-- Intro Text Container -->
+    <div id="intro-container">
+        <h1 class="hello-text">Hello</h1>
+    </div>
+
+    <!-- Main Application (Hidden Initially) -->
+    <div id="main-app">
+        <div id="canvas-container"></div>
+        <div id="wallpaper-clock" style="position: absolute; bottom: 40px; right: 60px; z-index: 5; text-align: right; color: white; opacity: 0.85; pointer-events: none; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+            <h1 id="idle-time" style="font-size: 6vw; margin: 0; font-weight: 300; text-shadow: 0 0 40px rgba(255,255,255,0.4), 0 0 10px rgba(255,255,255,0.8);">00:00:00</h1>
+            <p id="idle-date" style="font-size: 1.5vw; margin: 0; letter-spacing: 0.5rem; text-transform: uppercase; color: rgba(255,255,255,0.6);">LOADING...</p>
+        </div>
+        <div id="ui-panel">
+            <!-- Default set to Golden Orange -->
+            <input type="color" id="colorPicker" value="#ffaa00">
+        </div>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+        // --- 1. GLOBALS & SETTINGS ---
+        const NUM_PARTICLES = 15000;
+        let targetScale = 1.0;
+        let currentScale = 1.0;
+        let animationActive = false;
+
+        const container = document.getElementById('canvas-container');
+        const colorPicker = document.getElementById('colorPicker');
+
+        // --- 2. THREE.JS SETUP ---
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x050505, 0.002);
+
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 0, 60);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.autoRotate = true;
+        controls.autoRotateSpeed = 1.0;
+
+        // Post-Processing (Bloom for glowing particles)
+        const renderScene = new RenderPass(scene, camera);
+        const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+        bloomPass.threshold = 0;
+        bloomPass.strength = 1.2;
+        bloomPass.radius = 0.5;
+
+        const composer = new EffectComposer(renderer);
+        composer.addPass(renderScene);
+        composer.addPass(bloomPass);
+
+        // --- 3. PARTICLE SYSTEM GENERATION ---
+        const canvas = document.createElement('canvas');
+        canvas.width = 32; canvas.height = 32;
+        const ctx = canvas.getContext('2d');
+        const gradient = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
+        gradient.addColorStop(0, 'rgba(255,255,255,1)');
+        gradient.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 32, 32);
+        const particleTexture = new THREE.CanvasTexture(canvas);
+
+        const geometry = new THREE.BufferGeometry();
+        const positions = new Float32Array(NUM_PARTICLES * 3);
+
+        const material = new THREE.PointsMaterial({
+            size: 0.8,
+            color: new THREE.Color(colorPicker.value),
+            map: particleTexture,
+            transparent: true,
+            opacity: 0.8,
+            depthWrite: false,
+            blending: THREE.AdditiveBlending
+        });
+
+        // --- 4. SATURN MATHEMATICS ---
+        for (let i = 0; i < NUM_PARTICLES; i++) {
+            const idx = i * 3;
+            let x = 0, y = 0, z = 0;
+
+            const nx = (Math.random() - 0.5) * 1.5;
+            const ny = (Math.random() - 0.5) * 1.5;
+            const nz = (Math.random() - 0.5) * 1.5;
+
+            if (i < NUM_PARTICLES * 0.4) {
+                // Planet Body
+                const u = Math.random(), v = Math.random();
+                const theta = u * 2.0 * Math.PI, phi = Math.acos(2.0 * v - 1.0);
+                const r = Math.cbrt(Math.random()) * 12;
+                x = r * Math.sin(phi) * Math.cos(theta);
+                y = r * Math.cos(phi);
+                z = r * Math.sin(phi) * Math.sin(theta);
+            } else {
+                // Rings
+                const angle = Math.random() * Math.PI * 2;
+                const r = 16 + Math.random() * 14;
+                x = r * Math.cos(angle);
+                y = (Math.random() - 0.5) * 1.5;
+                z = r * Math.sin(angle);
+            }
+
+            // Tilt Saturn smoothly
+            const tempY = y * Math.cos(0.4) - z * Math.sin(0.4);
+            const tempZ = y * Math.sin(0.4) + z * Math.cos(0.4);
+            y = tempY; z = tempZ;
+
+            positions[idx] = x + nx;
+            positions[idx + 1] = y + ny;
+            positions[idx + 2] = z + nz;
+        }
+
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+        const particleSystem = new THREE.Points(geometry, material);
+        scene.add(particleSystem);
+
+        colorPicker.addEventListener('input', (e) => {
+            material.color.set(e.target.value);
+        });
+
+        // Setup resize handling
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            composer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Render one initial frame so the canvas is ready behind the scenes
+        composer.render();
+
+        // --- 5. ANIMATION LOOP & AUTOMATION ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            if (!animationActive) return;
+            requestAnimationFrame(animate);
+
+            const time = clock.getElapsedTime();
+
+            // Math.cos(time * Math.PI / 10) completes a full wave every 20 seconds.
+            // Using `-Math.cos` starts the wave at its minimum value (compression),
+            // expands to its maximum over 10 seconds, then compresses back over 10 seconds.
+            const minScale = 0.9;  // Prevents over-compression
+            const maxScale = 2.2;  // Beautiful wide expansion
+            const midPoint = (maxScale + minScale) / 2;
+            const amplitude = (maxScale - minScale) / 2;
+
+            targetScale = midPoint - Math.cos(time * Math.PI / 10) * amplitude;
+
+            // Smoothly apply scale
+            currentScale += (targetScale - currentScale) * 0.1;
+            particleSystem.scale.set(currentScale, currentScale, currentScale);
+
+            // Add extra rotation speed based on scale
+            controls.autoRotateSpeed = currentScale * 1.5;
+            controls.update();
+
+            composer.render();
+        }
+
+        // --- 6. INTRO SEQUENCE MANAGER ---
+        // Display exactly 5 seconds (5000ms) before fading into 3D system
+        setTimeout(() => {
+            const intro = document.getElementById('intro-container');
+            const mainApp = document.getElementById('main-app');
+
+            // Trigger crossfade
+            intro.style.opacity = '0';
+            mainApp.style.opacity = '1';
+
+            // Wait for fade to finish, then cleanup and start ThreeJS
+            setTimeout(() => {
+                intro.style.display = 'none';
+                clock.start(); // Start timer exactly as it appears
+                animationActive = true;
+                animate(); // Kick off render loop
+                
+                // Start the center clock
+                function updateIdleClock() {
+                    const now = new Date();
+                    document.getElementById('idle-time').innerText = now.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute:'2-digit', second:'2-digit' });
+                    document.getElementById('idle-date').innerText = now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }).toUpperCase();
+                    setTimeout(updateIdleClock, 1000);
+                }
+                updateIdleClock();
+            }, 1500);
+
+        }, 5000); // 5 Seconds total duration
+
+    </script>
+</body>
+
+</html>

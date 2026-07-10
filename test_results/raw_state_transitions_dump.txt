@@ -1,0 +1,30 @@
+# TEST 3: Raw State Transition Dump — swipe_left x24
+# Generated: 2026-07-07T01:17:08.237296
+# Platform: Windows-11-10.0.26200-SP0
+# Total entries: 25
+#======================================================================
+INIT | page=0 | mode=wake
+Swipe 001 | prev=0 -> actual=1 | expected=1 | OK | 10.47 ms
+Swipe 002 | prev=1 -> actual=2 | expected=2 | OK | 9.39 ms
+Swipe 003 | prev=2 -> actual=3 | expected=3 | OK | 5.84 ms
+Swipe 004 | prev=3 -> actual=4 | expected=4 | OK | 6.21 ms
+Swipe 005 | prev=4 -> actual=0 | expected=0 | OK | 5.19 ms
+Swipe 006 | prev=0 -> actual=1 | expected=1 | OK | 4.34 ms
+Swipe 007 | prev=1 -> actual=2 | expected=2 | OK | 4.42 ms
+Swipe 008 | prev=2 -> actual=3 | expected=3 | OK | 5.61 ms
+Swipe 009 | prev=3 -> actual=4 | expected=4 | OK | 4.70 ms
+Swipe 010 | prev=4 -> actual=0 | expected=0 | OK | 4.45 ms
+Swipe 011 | prev=0 -> actual=1 | expected=1 | OK | 5.85 ms
+Swipe 012 | prev=1 -> actual=2 | expected=2 | OK | 4.75 ms
+Swipe 013 | prev=2 -> actual=3 | expected=3 | OK | 4.06 ms
+Swipe 014 | prev=3 -> actual=4 | expected=4 | OK | 4.21 ms
+Swipe 015 | prev=4 -> actual=0 | expected=0 | OK | 5.57 ms
+Swipe 016 | prev=0 -> actual=1 | expected=1 | OK | 4.43 ms
+Swipe 017 | prev=1 -> actual=2 | expected=2 | OK | 4.23 ms
+Swipe 018 | prev=2 -> actual=3 | expected=3 | OK | 5.27 ms
+Swipe 019 | prev=3 -> actual=4 | expected=4 | OK | 4.92 ms
+Swipe 020 | prev=4 -> actual=0 | expected=0 | OK | 4.20 ms
+Swipe 021 | prev=0 -> actual=1 | expected=1 | OK | 4.06 ms
+Swipe 022 | prev=1 -> actual=2 | expected=2 | OK | 5.19 ms
+Swipe 023 | prev=2 -> actual=3 | expected=3 | OK | 4.27 ms
+Swipe 024 | prev=3 -> actual=4 | expected=4 | OK | 4.30 ms
