@@ -59,12 +59,26 @@ TXT_OUTPUT = os.path.join(TEST_SCRIPT_DIR, 'test_results_browser_realtime.txt')
 PI_GESTURE_LOG = os.path.join(SCRIPT_DIR, 'test_results', 'raw_gesture_latency_dump.txt')
 
 def free_port(port):
-    """Kills any residual uvicorn or python process listening on the target port on Windows."""
-    try:
-        cmd = f"Get-NetTCPConnection -LocalPort {port} -ErrorAction SilentlyContinue | ForEach-Object {{ Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }}"
-        subprocess.run(["powershell", "-Command", cmd], capture_output=True)
-    except Exception as e:
-        print(f"    [WARN] Failed to clear port {port}: {e}")
+    """Kills any residual process listening on the target port (cross-platform)."""
+    import platform
+    if platform.system() == 'Windows':
+        try:
+            cmd = f"Get-NetTCPConnection -LocalPort {port} -ErrorAction SilentlyContinue | ForEach-Object {{ Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }}"
+            subprocess.run(["powershell", "-Command", cmd], capture_output=True)
+        except Exception:
+            pass
+    else:
+        # Linux / macOS
+        try:
+            subprocess.run(["fuser", "-k", f"{port}/tcp"], capture_output=True)
+        except Exception:
+            try:
+                pid_cmd = subprocess.run(["lsof", "-t", f"-i:{port}"], capture_output=True, text=True)
+                pids = pid_cmd.stdout.strip().split()
+                for pid in pids:
+                    subprocess.run(["kill", "-9", pid], capture_output=True)
+            except Exception:
+                pass
 
 def spawn_server():
     """Starts the uvicorn backend on port 8003 and returns the subprocess object."""
@@ -74,11 +88,14 @@ def spawn_server():
     backend_dir = os.path.join(SCRIPT_DIR, 'backend')
     cmd = [sys.executable, '-m', 'uvicorn', 'main:app', '--host', SERVER_HOST, '--port', str(SERVER_PORT)]
     
-    # Hide server stdout/stderr to keep terminal clean unless debugging
     proc = subprocess.Popen(cmd, cwd=backend_dir, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     
     # Poll until server is responsive
     for attempt in range(12):
+        if proc.poll() is not None:
+            print(f"  [FATAL] Backend server process terminated instantly with exit code {proc.returncode}!")
+            print("          Please verify that fastapi and uvicorn are installed in your virtual environment.")
+            sys.exit(1)
         try:
             s = socket.create_connection((SERVER_HOST, SERVER_PORT), timeout=1)
             s.close()
@@ -86,9 +103,6 @@ def spawn_server():
             return proc
         except (ConnectionRefusedError, socket.timeout, OSError):
             time.sleep(1)
-            
-    print("  [FATAL] Server startup timeout! Aborting.")
-    sys.exit(1)
 
 def init_selenium():
     """Starts Chrome with WebGL enabled under Selenium control."""
