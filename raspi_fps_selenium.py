@@ -46,7 +46,28 @@ def measure_fps(url="http://localhost:8000", duration=30):
     opts.add_argument("--enable-webgl")
     opts.add_argument("--ignore-gpu-blocklist")
 
-    driver = webdriver.Chrome(options=opts)
+    # Cross-platform config for Linux/Raspberry Pi
+    import platform
+    import os
+    
+    service = None
+    if platform.system() != 'Windows':
+        rpi_chromiums = ["/usr/bin/chromium", "/usr/bin/chromium-browser"]
+        for path in rpi_chromiums:
+            if os.path.exists(path):
+                opts.binary_location = path
+                break
+        
+        rpi_drivers = ["/usr/bin/chromedriver"]
+        for path in rpi_drivers:
+            if os.path.exists(path):
+                service = Service(path)
+                break
+
+    if service:
+        driver = webdriver.Chrome(service=service, options=opts)
+    else:
+        driver = webdriver.Chrome(options=opts)
 
     try:
         driver.get(url)

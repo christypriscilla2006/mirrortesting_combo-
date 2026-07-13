@@ -148,11 +148,12 @@ def run_api_telemetry_loop():
         time.sleep(0.2)  # poll every 200ms
 
 def init_selenium():
-    """Starts Chrome with auto-granted webcam access enabled."""
-    print("  [2/5] Starting Google Chrome with webcam auto-approval...")
+    """Starts Chrome/Chromium with auto-granted webcam access enabled (cross-platform)."""
+    print("  [2/5] Starting browser via Selenium webdriver...")
     try:
         from selenium import webdriver
         from selenium.webdriver.chrome.options import Options
+        from selenium.webdriver.chrome.service import Service
     except ImportError:
         print("  [FATAL] Selenium not installed! Run: pip install selenium")
         sys.exit(1)
@@ -162,14 +163,36 @@ def init_selenium():
     opts.add_argument("--enable-webgl")
     opts.add_argument("--ignore-gpu-blocklist")
     
+    # Cross-platform config for Linux/Raspberry Pi
+    import platform
+    import os
+    
+    service = None
+    if platform.system() != 'Windows':
+        rpi_chromiums = ["/usr/bin/chromium", "/usr/bin/chromium-browser"]
+        for path in rpi_chromiums:
+            if os.path.exists(path):
+                opts.binary_location = path
+                break
+        
+        rpi_drivers = ["/usr/bin/chromedriver"]
+        for path in rpi_drivers:
+            if os.path.exists(path):
+                service = Service(path)
+                break
+                
     try:
-        driver = webdriver.Chrome(options=opts)
+        if service:
+            driver = webdriver.Chrome(service=service, options=opts)
+        else:
+            driver = webdriver.Chrome(options=opts)
+            
         driver.set_window_size(1280, 800)
         driver.set_page_load_timeout(15)
         driver.set_script_timeout(15)
         return driver
     except Exception as e:
-        print(f"  [FATAL] Chrome driver initialization failed: {e}")
+        print(f"  [FATAL] Browser driver initialization failed: {e}")
         sys.exit(1)
 
 def compute_statistics(data):
