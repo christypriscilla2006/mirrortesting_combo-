@@ -413,7 +413,14 @@ def main():
             # State transition timing (Selenium JS execution)
             t_trans_start = time.time() * 1000.0
             driver.execute_script("window.__lastTransition = null;")
-            driver.execute_script("setPage((typeof S !== 'undefined' ? (S.page + 1) % 5 : 0));")
+            driver.execute_script("""
+                if (typeof setPage !== 'undefined') {
+                    setPage(window.S ? (window.S.page + 1) % 5 : 0);
+                } else if (window.S) {
+                    window.S.page = (window.S.page + 1) % 5;
+                    window.__lastTransition = Date.now();
+                }
+            """)
             
             t_end = None
             for _ in range(30):  # poll 30ms
