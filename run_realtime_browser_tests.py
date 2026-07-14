@@ -116,7 +116,7 @@ def init_selenium():
     opts.add_argument("--enable-webgl")
     opts.add_argument("--ignore-gpu-blocklist")
     opts.add_argument("--use-fake-ui-for-media-stream")
-    opts.add_argument("--headless")  # Automated runs are headless
+    opts.add_argument("--use-fake-device-for-media-stream")
     
     # Cross-platform config for Linux/Raspberry Pi
     service = None
