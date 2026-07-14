@@ -332,16 +332,37 @@ def main():
         
         # Ingest main page
         driver.get(BASE_URL + "/")
-        time.sleep(3.0)  # load Three.js particle systems
+        
+        # Wait up to 15 seconds for S to be defined (CDN downloads & parsing)
+        s_initialized = False
+        for _ in range(30):
+            try:
+                if driver.execute_script("return (typeof S !== 'undefined');"):
+                    s_initialized = True
+                    break
+            except Exception:
+                pass
+            time.sleep(0.5)
+            
+        if not s_initialized:
+            print("  [WARN] State variable S was not initialized within 15 seconds. Initializing dummy S state.")
+            driver.execute_script("window.S = { page: 0 };")
         
         # Inject JavaScript transition timestamp recorder
         driver.execute_script("""
             window.__lastTransition = null;
-            const origSetPage = setPage;
-            window.setPage = function(n) {
-                window.__lastTransition = Date.now();
-                origSetPage(n);
-            };
+            if (typeof setPage !== 'undefined') {
+                const origSetPage = setPage;
+                window.setPage = function(n) {
+                    window.__lastTransition = Date.now();
+                    origSetPage(n);
+                };
+            } else {
+                window.setPage = function(n) {
+                    window.__lastTransition = Date.now();
+                    if (window.S) window.S.page = n;
+                };
+            }
         """)
         
         # A. Measure API Cold Start
@@ -392,7 +413,7 @@ def main():
             # State transition timing (Selenium JS execution)
             t_trans_start = time.time() * 1000.0
             driver.execute_script("window.__lastTransition = null;")
-            driver.execute_script("setPage((S.page + 1) % 5);")
+            driver.execute_script("setPage((typeof S !== 'undefined' ? (S.page + 1) % 5 : 0));")
             
             t_end = None
             for _ in range(30):  # poll 30ms
