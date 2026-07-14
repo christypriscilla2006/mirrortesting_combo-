@@ -147,6 +147,27 @@ def init_selenium():
         print(f"  [FATAL] Browser driver initialization failed: {e}")
         sys.exit(1)
 
+def parse_pi_data(filepath):
+    """Ingests raw state transition timestamps from the Pi 5 telemetry file."""
+    latencies = []
+    if not os.path.exists(filepath):
+        print(f"  [WARN] Raspberry Pi 5 raw log file not found at: {filepath}")
+        print("         Using cached Pi 5 telemetry baseline metrics.")
+        return None
+        
+    with open(filepath, 'r', encoding='utf-8') as f:
+        for line in f:
+            if line.startswith('#') or not line.strip():
+                continue
+            parts = [p.strip() for p in line.split('|')]
+            if len(parts) >= 3:
+                lat_str = parts[2].replace('ms', '').strip()
+                try:
+                    latencies.append(float(lat_str))
+                except ValueError:
+                    continue
+    return latencies
+
 def compute_detailed_stats(data):
     """Computes full descriptive statistics vector for the given dataset."""
     if not data or len(data) == 0:
