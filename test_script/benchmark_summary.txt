@@ -1,25 +1,25 @@
 ================================================================================
                     IEEE BENCHMARK SUITE FINAL SUMMARY
 ================================================================================
-Date: 2026-07-14 | Time: 19:41:46
+Date: 2026-07-14 | Time: 21:47:22
 Platform OS: Windows (10.0.26200)
 Python version: 3.13.14 | Browser version: 150.0.7871.102
 --------------------------------------------------------------------------------
 1. DESCRIPTIVE SUMMARY STATISTICS
 --------------------------------------------------------------------------------
-Overall Mean Transition Latency:  78.9861 ms
-Mean of Means across runs:        78.9861 ms
-Run-to-Run Std Dev (SD):          31.0397 ms
-Run-to-Run Coef. of Var. (CV):    0.3930
+Overall Mean Transition Latency:  93.9985 ms
+Mean of Means across runs:        93.9985 ms
+Run-to-Run Std Dev (SD):          41.4091 ms
+Run-to-Run Coef. of Var. (CV):    0.4405
 
 --------------------------------------------------------------------------------
 2. STATISTICAL VALIDATION & SIGNIFICANCE
 --------------------------------------------------------------------------------
-Shapiro-Wilk Normality p-value:   1.6178e-55 (Normal: False)
+Shapiro-Wilk Normality p-value:   1.7003e-54 (Normal: False)
 Comparative Significance Test:    Mann-Whitney U Test
-Test Statistic:                   963271.0000
+Test Statistic:                   949938.0000
 p-value:                          p < 0.001
-Cohen's d Effect Size:            0.4117
-Cliff's Delta Effect Size:        0.9265
-Interpretation:                   Cohen's d: Small, Cliff's Delta: Large
+Cohen's d Effect Size:            0.5500
+Cliff's Delta Effect Size:        0.8999
+Interpretation:                   Cohen's d: Medium, Cliff's Delta: Large
 ================================================================================
