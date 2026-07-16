@@ -61,18 +61,18 @@ def free_port(port):
     if platform.system() == 'Windows':
         try:
             cmd = f"Get-NetTCPConnection -LocalPort {port} -ErrorAction SilentlyContinue | ForEach-Object {{ Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }}"
-            subprocess.run(["powershell", "-Command", cmd], capture_output=True)
+            subprocess.run(["powershell", "-Command", cmd], capture_output=True, timeout=5.0)
         except Exception:
             pass
     else:
         try:
-            subprocess.run(["fuser", "-k", f"{port}/tcp"], capture_output=True)
+            subprocess.run(["fuser", "-k", f"{port}/tcp"], capture_output=True, timeout=5.0)
         except Exception:
             try:
-                pid_cmd = subprocess.run(["lsof", "-t", f"-i:{port}"], capture_output=True, text=True)
+                pid_cmd = subprocess.run(["lsof", "-t", f"-i:{port}"], capture_output=True, text=True, timeout=5.0)
                 pids = pid_cmd.stdout.strip().split()
                 for pid in pids:
-                    subprocess.run(["kill", "-9", pid], capture_output=True)
+                    subprocess.run(["kill", "-9", pid], capture_output=True, timeout=5.0)
             except Exception:
                 pass
 
