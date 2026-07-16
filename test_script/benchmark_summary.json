@@ -7,31 +7,31 @@
     "selenium_version": "4.44.0",
     "cpu_model": "Intel64 Family 6 Model 154 Stepping 4, GenuineIntel",
     "ram_size_gb": 15.68,
-    "date": "2026-07-14",
-    "time": "21:47:22",
-    "ambient_cpu_pct": 14.2,
-    "browser_version": "150.0.7871.102",
-    "display_refresh_rate_hz": 30,
+    "date": "2026-07-16",
+    "time": "19:14:43",
+    "ambient_cpu_pct": 12.7,
+    "browser_version": "150.0.7871.115",
+    "display_refresh_rate_hz": 60,
     "screen_resolution": "1536x864"
   },
   "runs_summary": {
-    "overall_transitions_mean": 93.99848608398437,
-    "overall_transitions_median": 64.2044677734375,
-    "overall_transitions_min": 21.48583984375,
-    "overall_transitions_max": 3504.219482421875,
-    "overall_transitions_std": 215.19914279129054,
-    "mean_of_means": 93.99848608398437,
-    "run_to_run_std": 41.409104573418546,
-    "run_to_run_cv": 0.44052948402191233
+    "overall_transitions_mean": 221.59083544921876,
+    "overall_transitions_median": 165.8424072265625,
+    "overall_transitions_min": 35.939697265625,
+    "overall_transitions_max": 6445.992919921875,
+    "overall_transitions_std": 494.968606546697,
+    "mean_of_means": 221.5908354492188,
+    "run_to_run_std": 92.41373819212129,
+    "run_to_run_cv": 0.41704675197769825
   },
   "statistical_tests": {
-    "shapiro_wilk_p_value": 1.7003382162312933e-54,
+    "shapiro_wilk_p_value": 6.339812624184608e-54,
     "distribution_normal": false,
     "test_applied": "Mann-Whitney U Test",
-    "test_statistic": 949938.0,
+    "test_statistic": 997563.0,
     "p_value": "p < 0.001",
-    "cohens_d": 0.54995596801423,
-    "cliffs_delta": 0.899876,
+    "cohens_d": 0.6038797935070268,
+    "cliffs_delta": 0.995126,
     "effect_size_interpretation": "Cohen's d: Medium, Cliff's Delta: Large"
   }
 }

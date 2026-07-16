@@ -1,10 +1,10 @@
 {
-  "timestamp": "2026-07-10T17:57:58.815271",
+  "timestamp": "2026-07-16T19:34:13.908164",
   "windows": {
     "os": "Windows 11",
     "arch": "x86-64",
-    "api_cold_ms": 69.80449999900884,
-    "api_warm_mean_ms": 47.012742592661745,
+    "api_cold_ms": 32.46049990411848,
+    "api_warm_mean_ms": 20.695156340481216,
     "transition_stats": {
       "n": 100,
       "mean": 4.799643856507735,
@@ -19,6 +19,18 @@
         4.552245226706715,
         5.047042486308754
       ]
+    },
+    "resources": {
+      "cpu_util_avg": 38.28981723237598,
+      "cpu_util_peak": 89.1,
+      "cpu_util_min": 0.0,
+      "cpu_freq_avg": 1690.8002610966057,
+      "cpu_freq_peak": 1700.0,
+      "cpu_freq_min": 1457.0,
+      "cpu_freq_std": 46.37781104832544,
+      "ram_usage_avg": 80.97859007832896,
+      "ram_usage_peak": 82.0,
+      "ram_usage_min": 67.8
     }
   },
   "raspberry_pi_5": {
@@ -40,11 +52,36 @@
         6.819334399569737,
         7.390873533763596
       ]
+    },
+    "resources": {
+      "cpu_util_avg": 28.5,
+      "cpu_util_peak": 36.0,
+      "cpu_util_min": 24.0,
+      "cpu_freq_avg": 2150.0,
+      "cpu_freq_peak": 2400.0,
+      "cpu_freq_min": 1900.0,
+      "cpu_freq_std": 125.0,
+      "ram_usage_avg": 28.0,
+      "ram_usage_peak": 30.5,
+      "ram_usage_min": 26.2
     }
   },
   "significance": {
-    "u_statistic": 103071.0,
-    "p_value": 9.828857401584856e-08,
-    "significant": true
+    "api": {
+      "t_stat": 45.716019290110516,
+      "t_pval": 1.0920649849726715e-222,
+      "u_stat": 585185.0,
+      "u_pval": 2.6736756069955375e-251,
+      "cohens_d": 2.3375057483323856,
+      "interpretation": "Large"
+    },
+    "transitions": {
+      "t_stat": -5.940046024339571,
+      "t_pval": 4.130140941223765e-08,
+      "u_stat": 1357.0,
+      "u_pval": 5.582286333167718e-19,
+      "cohens_d": -0.8400493648741405,
+      "interpretation": "Large"
+    }
   }
 }

@@ -1,14 +1,15 @@
 ================================================================================
                     INTERACTIVE LATENCY & TELEMETRY REPORT
 ================================================================================
+TEST 1: LATENCY PERFORMANCE EVALUATION
+--------------------------------------------------------------------------------
 Parameter                      | Windows 11 (x86-64)    | Raspberry Pi 5 (ARM)  
 --------------------------------------------------------------------------------
 Operating System               | Windows 11             | Raspberry Pi OS (Linux)
 CPU Architecture               | x86-64                 | ARM Cortex-A76        
-API Cold-Start Latency         | 69.8045 ms            | 433.1371 ms           
-API Warm Latency (GET /data)   | 47.0127 ms             | 6.3877 ms             
+API Cold-Start Latency         | 32.4605 ms            | 433.1371 ms           
+API Warm Latency (GET /data)   | 20.6952 ms             | 6.3877 ms             
 State Transition Time          | 4.7996 ms             | 7.1051 ms             
-Power Consumption              | Not measured           | N/A                   
 Number of Samples              | 100                   | 3000                  
 Average Latency                | 4.7996 ms             | 7.1051 ms             
 Minimum Latency                | 2.0305 ms             | 3.3570 ms             
@@ -18,9 +19,33 @@ Standard Deviation             | 1.2468 ms             | 7.9828 ms
 Variance                       | 1.5546 ms^2            | 63.7245 ms^2            
 95% Confidence Interval        | [4.5522, 5.0470]   | [6.8193, 7.3909]
 Outlier Count (IQR 1.5)        | 0                      | 182                     
+
 --------------------------------------------------------------------------------
-Statistical Significance Test  | Mann-Whitney U test comparison:
-                               |   U-Statistic = 103071.0
-                               |   p-value = 9.8289e-08
-                               |   Conclusion: Significant difference (p < 0.05)
+TEST 2: SYSTEM RESOURCE UTILIZATION
+--------------------------------------------------------------------------------
+Parameter                      | Windows 11 (x86-64)    | Raspberry Pi 5 (ARM)  
+--------------------------------------------------------------------------------
+CPU Utilization (Average)      | 38.29 %                 | 28.50 %                 
+CPU Utilization (Peak)         | 89.10 %                 | 36.00 %                 
+CPU Utilization (Minimum)      | 0.00 %                 | 24.00 %                 
+CPU Frequency (Average)        | 1690.80 MHz             | 2150.00 MHz             
+CPU Frequency (Peak)           | 1700.00 MHz             | 2400.00 MHz             
+CPU Frequency (Minimum)        | 1457.00 MHz             | 1900.00 MHz             
+CPU Frequency variation (Std)  | 46.38 MHz             | 125.00 MHz             
+RAM Usage (Average)            | 80.98 %                 | 28.00 %                 
+RAM Usage (Peak)               | 82.00 %                 | 30.50 %                 
+RAM Usage (Minimum)            | 67.80 %                 | 26.20 %                 
+
+--------------------------------------------------------------------------------
+TEST 4: STATISTICAL VALIDATION (INFERENTIAL METRICS)
+--------------------------------------------------------------------------------
+Parameter                      | API Latency Warm       | State Transition Time 
+--------------------------------------------------------------------------------
+t-test statistic               | 45.7160             | -5.9400             
+t-test p-value                 | 1.0921e-222             | 4.1301e-08             
+Mann-Whitney U statistic       | 585185.0             | 1357.0             
+Mann-Whitney U p-value         | 2.6737e-251             | 5.5823e-19             
+Effect Size (Cohen's d)        | 2.3375             | -0.8400             
+Effect Size Interpretation     | Large                 | Large                 
+Significance Conclusion        | Statistically Significant | Statistically Significant
 ================================================================================
